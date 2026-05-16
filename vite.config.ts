@@ -13,7 +13,7 @@ export default defineConfig({
     rules: {
       'no-console': ['error', { allow: ['warn', 'error'] }],
     },
-    ignorePatterns: ['.changeset/**', '.github/**', '.opencode/**', '.vite-hooks/**', '.vscode/**'],
+    ignorePatterns: ['.changeset/**', '.github/**', '.opencode/**', '.vite-hooks/**', '.vscode/**', '*.md'],
     overrides: [
       {
         files: ['**/*.test.ts', '**/*.spec.ts'],
@@ -28,7 +28,7 @@ export default defineConfig({
     singleQuote: true,
     tabWidth: 2,
     trailingComma: 'all',
-    ignorePatterns: ['.changeset/**', '.github/**', '.opencode/**', '.vite-hooks/**', '.vscode/**'],
+    ignorePatterns: ['.changeset/**', '.github/**', '.opencode/**', '.vite-hooks/**', '.vscode/**', '*.md'],
   },
   test: {
     include: ['packages/*/tests/**/*.test.ts'],
