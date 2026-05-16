@@ -1,0 +1,17 @@
+{
+  "name": "@tooling/vite-config",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Shared Vite+ configuration for effect-pantry packages",
+  "type": "module",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "vite-plus": "catalog:"
+  },
+  "devDependencies": {
+    "@tooling/tsconfig": "workspace:*"
+  }
+}

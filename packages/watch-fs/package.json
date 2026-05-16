@@ -1,0 +1,65 @@
+{
+  "name": "@effect-pantry/watch-fs",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Effect-native file watching — wraps chokidar as Effect Streams with typed events and Scope-based resource management",
+  "keywords": [
+    "chokidar",
+    "effect",
+    "file-watching"
+  ],
+  "homepage": "https://github.com/nipakke/effect-pantry/tree/main/packages/effect-pantry-watcher#readme",
+  "bugs": {
+    "url": "https://github.com/nipakke/effect-pantry/issues"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nipakke/effect-pantry.git",
+    "directory": "packages/watch-fs"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "vp pack",
+    "test": "vitest run",
+    "check": "vp check",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@effect/platform": "catalog:effect3",
+    "chokidar": "catalog:",
+    "effect": "catalog:effect3"
+  },
+  "devDependencies": {
+    "@effect/platform-node": "catalog:effect3",
+    "@effect/vitest": "catalog:effect3",
+    "@tooling/tsconfig": "workspace:*",
+    "@types/node": "catalog:",
+    "vite-plus": "catalog:",
+    "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

@@ -1,0 +1,51 @@
+packages:
+  - 'packages/*'
+  - 'tooling/*'
+
+# ── Supply-chain security ──────────────────────────────────────────
+minimumReleaseAge: 4320
+minimumReleaseAgeExclude:
+  - vite-plus
+  - '@voidzero-dev/*'
+blockExoticSubdeps: true
+trustPolicy: no-downgrade
+trustPolicyExclude:
+  - undici-types
+strictDepBuilds: true
+verifyStoreIntegrity: true
+
+# ── Peer dependencies ──────────────────────────────────────────────
+strictPeerDependencies: true
+autoInstallPeers: true
+peerDependencyRules:
+  allowedVersions:
+    '@voidzero-dev/vite-plus-test>@vitest/ui': '3'
+
+# ── Hoisting ────────────────────────────────────────────────────────
+shamefullyHoist: false
+
+# ── Catalog enforcement ─────────────────────────────────────────────
+catalogMode: strict
+
+# ── Default catalog (shared tooling, no ecosystem coupling) ────────
+catalog:
+  '@changesets/cli': ^2.28.0
+  '@changesets/changelog-github': ^0.7.0
+  '@types/node': ^24.0.0
+  chokidar: ^5.0.0
+  typescript: ^6.0.0
+  vite-plus: ^0.1.21
+  vitest: ^3.2.0
+
+# ── Named catalogs ──────────────────────────────────────────────────
+catalogs:
+  effect3:
+    effect: ^3.21.2
+    '@effect/platform': ^0.90.10
+    '@effect/platform-node': ^0.96.1
+    '@effect/vitest': ^0.29.0
+
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true
+  msgpackr-extract: true

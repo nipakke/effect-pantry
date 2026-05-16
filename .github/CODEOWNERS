@@ -1,0 +1,6 @@
+# Each line is a file pattern followed by one or more owners.
+# Order matters: the last matching pattern takes precedence.
+
+* @your-org/maintainers
+
+packages/effect-pantry-watcher/ @your-org/watcher-maintainers

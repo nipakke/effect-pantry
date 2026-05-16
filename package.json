@@ -1,0 +1,26 @@
+{
+  "name": "effect-pantry",
+  "private": true,
+  "scripts": {
+    "test": "vp run -r test",
+    "lint": "vp lint",
+    "fmt": "vp fmt",
+    "check": "vp check",
+    "pack": "vp run -r pack",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "vp run -r pack && changeset publish",
+    "typecheck": "vp run -r typecheck"
+  },
+  "dependencies": {
+    "@changesets/changelog-github": "catalog:"
+  },
+  "devDependencies": {
+    "@changesets/cli": "catalog:",
+    "@tooling/vite-config": "workspace:*",
+    "typescript": "catalog:",
+    "vite-plus": "catalog:",
+    "vitest": "catalog:"
+  },
+  "packageManager": "pnpm@11.1.1"
+}
