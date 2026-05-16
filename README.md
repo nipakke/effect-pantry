@@ -10,7 +10,7 @@
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org) >= 26 (see `.node-version`)
+- [Node.js](https://nodejs.org) >= 24 (see `.node-version`)
 - [pnpm](https://pnpm.io) >= 11
 
 ## Getting Started

@@ -4,7 +4,7 @@ Thanks for your interest in contributing. This document covers the setup, conven
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org) >= 26
+- [Node.js](https://nodejs.org) >= 24
 - [pnpm](https://pnpm.io) >= 11
 
 ## Setup
