@@ -1,7 +1,6 @@
 {
   "name": "@effect-pantry/watch-fs",
   "version": "0.0.1",
-  "private": true,
   "description": "Effect-native file watching — wraps chokidar as Effect Streams with typed events and Scope-based resource management",
   "keywords": [
     "chokidar",
