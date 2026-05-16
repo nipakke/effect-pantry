@@ -1,0 +1,64 @@
+{
+  "name": "@effect-pantry/bentocache",
+  "version": "0.0.1",
+  "description": "Idiomatic Effect-TS wrapper for BentoCache — multi-tier cache with stampede protection, grace periods, and scoped lifecycle",
+  "keywords": [
+    "bentocache",
+    "cache",
+    "effect",
+    "grace-period",
+    "multi-tier"
+  ],
+  "homepage": "https://github.com/nipakke/effect-pantry/tree/main/packages/bentocache#readme",
+  "bugs": {
+    "url": "https://github.com/nipakke/effect-pantry/issues"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nipakke/effect-pantry.git",
+    "directory": "packages/bentocache"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "vp pack",
+    "test": "vitest run",
+    "check": "vp check",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "bentocache": "catalog:",
+    "effect": "catalog:effect3"
+  },
+  "devDependencies": {
+    "@effect/vitest": "catalog:effect3",
+    "@tooling/tsconfig": "workspace:*",
+    "@types/node": "catalog:",
+    "vite-plus": "catalog:",
+    "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}
