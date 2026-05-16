@@ -7,7 +7,7 @@
     "effect",
     "file-watching"
   ],
-  "homepage": "https://github.com/nipakke/effect-pantry/tree/main/packages/effect-pantry-watcher#readme",
+  "homepage": "https://github.com/nipakke/effect-pantry/tree/main/packages/watch-fs#readme",
   "bugs": {
     "url": "https://github.com/nipakke/effect-pantry/issues"
   },
