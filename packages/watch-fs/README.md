@@ -84,7 +84,7 @@ stream('add').pipe(Effect.catchTags({
 **Subscribe to a single event:**
 
 ```ts
-const { stream } = yield * watch('.');
+const { stream } = yield* watch('.');
 const adds = stream('add'); // only file creations
 const changes = stream('change'); // only modifications
 const all = stream('all'); // everything
@@ -93,15 +93,15 @@ const all = stream('all'); // everything
 **Dynamic paths at runtime:**
 
 ```ts
-const { add, unwatch } = yield * watch('src/');
-yield * add('generated/');
-yield * unwatch('src/temp/');
+const { add, unwatch } = yield* watch('src/');
+yield* add('generated/');
+yield* unwatch('src/temp/');
 ```
 
 **Filter events by type:**
 
 ```ts
-yield *
+yield*
   stream('unlink').pipe(
     Stream.runForEach((e) => Effect.sync(() => console.log('deleted:', e.path))),
   );
