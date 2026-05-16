@@ -13,6 +13,7 @@ export const sharedLint: OxlintConfig = {
   rules: {
     'no-console': ['error', { allow: ['warn', 'error'] }],
   },
+  ignorePatterns: ['*.md'],
   overrides: [
     {
       files: ['**/*.test.ts', '**/*.spec.ts'],
@@ -31,4 +32,5 @@ export const sharedFmt: OxfmtConfig = {
   singleQuote: true,
   tabWidth: 2,
   trailingComma: 'all',
+  ignorePatterns: ['*.md'],
 };
