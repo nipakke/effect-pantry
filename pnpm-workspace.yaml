@@ -31,7 +31,7 @@ catalogMode: strict
 catalog:
   '@changesets/cli': ^2.28.0
   '@changesets/changelog-github': ^0.7.0
-  '@types/node': ^24.0.0
+  '@types/node': ^25.8.0
   chokidar: ^5.0.0
   typescript: ^6.0.0
   vite-plus: ^0.1.21
