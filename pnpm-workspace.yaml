@@ -36,6 +36,10 @@ catalog:
   typescript: ^6.0.0
   vite-plus: ^0.1.21
   vitest: ^3.2.0
+  '@effect/experimental': ^0.60.0
+  effect: ^3.21.2
+  '@standard-schema/spec': ^1.1.0
+  '@typescript/native-preview': 7.0.0-dev.20260515.1
 
 # ── Named catalogs ──────────────────────────────────────────────────
 catalogs:

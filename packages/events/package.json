@@ -1,0 +1,67 @@
+{
+  "name": "@effect-pantry/events",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Type-safe in-memory event bus for Effect-TS — branded event definitions with PubSub-backed publish/subscribe",
+  "keywords": [
+    "effect",
+    "event-bus",
+    "events",
+    "pubsub"
+  ],
+  "homepage": "https://github.com/nipakke/effect-pantry/tree/main/packages/events#readme",
+  "bugs": {
+    "url": "https://github.com/nipakke/effect-pantry/issues"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nipakke/effect-pantry.git",
+    "directory": "packages/events"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsgo",
+    "prepare": "tsgo",
+    "check": "vp check",
+    "typecheck": "tsgo --noEmit"
+  },
+  "dependencies": {
+    "@effect/experimental": "catalog:",
+    "@standard-schema/spec": "catalog:",
+    "@typescript/native-preview": "catalog:",
+    "effect": "catalog:effect3"
+  },
+  "devDependencies": {
+    "@effect/platform": "catalog:effect3",
+    "@effect/vitest": "catalog:effect3",
+    "@tooling/tsconfig": "workspace:*",
+    "@types/node": "catalog:",
+    "vite-plus": "catalog:",
+    "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}
