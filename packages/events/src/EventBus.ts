@@ -150,8 +150,10 @@ export const make = (options: MakeOptions = {}) =>
       subscribe: (expectedEvent) =>
         pipe(
           Stream.fromPubSub(bus),
-          Stream.filter((inc) => inc.event.tag === expectedEvent.tag),
-          Stream.map((env) => env as EnvelopeApi.Envelope<typeof expectedEvent>),
+          Stream.filter(
+            (env): env is EnvelopeApi.Envelope<typeof expectedEvent> =>
+              env.event.tag === expectedEvent.tag,
+          ),
         ),
     });
   });

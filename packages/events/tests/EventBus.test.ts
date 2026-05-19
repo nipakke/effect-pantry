@@ -1,5 +1,5 @@
 import { it, expect } from '@effect/vitest';
-import { Effect, Stream, Schema, Option, Fiber, pipe } from 'effect';
+import { Effect, Stream, Schema, Option, Fiber, TestClock, pipe } from 'effect';
 import { Event, EventBus, EventBusNotFoundError } from '../src/index.js';
 
 // ── Event definitions ─────────────────────────────────────────────────
@@ -22,7 +22,7 @@ const TestLayer = EventBus.layer({ capacity: 16 });
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
-const takeOne = <A, E, R>(stream: Stream.Stream<A, E, R>) =>
+const takeOne = <A>(stream: Stream.Stream<A, any, any>) =>
   pipe(
     stream,
     Stream.take(1),
@@ -49,7 +49,9 @@ it.layer(TestLayer)('EventBus', (it) => {
       const stream = EventBus.subscribe(StringEvent);
 
       const fiber = yield* Effect.fork(takeOne(stream));
-      yield* Effect.promise(() => new Promise((r) => setTimeout(r, 10)));
+      // Advance the TestClock to let the runtime process the forked fiber
+      // and establish the PubSub subscription before we publish.
+      yield* TestClock.adjust("10000 millis");
       yield* EventBus.publish(StringEvent, 'hello world');
 
       const envelope = yield* Fiber.join(fiber);
@@ -62,7 +64,7 @@ it.layer(TestLayer)('EventBus', (it) => {
       const stream = EventBus.subscribe(StringEvent);
 
       const fiber = yield* Effect.fork(takeOne(stream));
-      yield* Effect.promise(() => new Promise((r) => setTimeout(r, 10)));
+      yield* TestClock.adjust("0 millis");
       yield* EventBus.publish(NumberEvent, 99);
       yield* EventBus.publish(StringEvent, 'only string');
 
@@ -79,7 +81,7 @@ it.layer(TestLayer)('EventBus', (it) => {
 
       const fiber1 = yield* Effect.fork(takeOne(stream1));
       const fiber2 = yield* Effect.fork(takeOne(stream2));
-      yield* Effect.promise(() => new Promise((r) => setTimeout(r, 10)));
+      yield* TestClock.adjust("0 millis");
 
       yield* EventBus.publish(StringEvent, 'broadcast');
 
@@ -107,7 +109,7 @@ it.layer(TestLayer)('EventBus', (it) => {
       if (!Option.isSome(opt)) return;
 
       const fiber = yield* Effect.fork(takeOne(opt.value));
-      yield* Effect.promise(() => new Promise((r) => setTimeout(r, 10)));
+      yield* TestClock.adjust("0 millis");
       yield* EventBus.publish(StringEvent, 'via optional');
 
       const envelope = yield* Fiber.join(fiber);
