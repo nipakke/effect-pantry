@@ -1,58 +1,17 @@
-import { StandardSchemaV1 } from '@standard-schema/spec';
-import { Effect, Context, PubSub, Stream, Schema, pipe, Layer, Option } from 'effect';
-import { EventValidationError, EventPublishError, EventBusNotFoundError } from './errors.js';
-import { AnyEvent, AnyPayload } from './Event.js';
+import { Effect, Context, PubSub, Stream, pipe, Layer, Option } from 'effect';
+import { EventBusNotFoundError } from './errors.js';
+import { AnyEvent } from './Event.js';
+import { InferPayloadTypeId } from './Payload.js';
 import * as EnvelopeApi from './Envelope.js';
-
-// ── Validation helper ─────────────────────────────────────────────────
-
-/**
- * Validate an event payload against its schema.
- *
- * Uses {@link Schema.decodeUnknown} for Effect schemas (handles
- * transforms, refinements, and context requirements) and falls back to
- * the {@link https://standardschema.dev StandardSchemaV1} protocol for
- * third-party schemas (Zod, Valibot, ArkType, etc.). Returns the
- * validated output on success, or an {@link EventValidationError} on
- * failure.
- */
-const validatePayload = <TEvent extends AnyEvent>(
-  event: TEvent,
-  value: unknown,
-): Effect.Effect<unknown, EventValidationError, never> => {
-  if (Schema.isSchema(event.payload)) {
-    return pipe(
-      Schema.decodeUnknown(event.payload)(value),
-      Effect.mapError(
-        (cause) => new EventValidationError({ eventTag: event.tag, cause }),
-      ),
-    ) as Effect.Effect<unknown, EventValidationError, never>;
-  }
-
-  // StandardSchemaV1 (non-Effect) — handle both sync and async validation
-  return Effect.gen(function* () {
-    const result = (event.payload as StandardSchemaV1)['~standard'].validate(value);
-    const resolved = result instanceof Promise ? yield* Effect.promise(() => result) : result;
-
-    if (!('value' in resolved)) {
-      return yield* Effect.fail(
-        new EventValidationError({ eventTag: event.tag, cause: resolved.issues }),
-      );
-    }
-
-    return resolved.value;
-  });
-};
 
 // ── EventBus service ──────────────────────────────────────────────────
 
-type BusError = EventValidationError | EventPublishError | EventBusNotFoundError;
 
 /**
  * In-memory typed event bus backed by Effect's {@link PubSub}.
  *
- * Provides publish/subscribe with per-event-tag filtering, runtime
- * payload validation, and both fail-fast and optional access patterns.
+ * Provides publish/subscribe with per-event-tag filtering and both
+ * fail-fast and optional access patterns.
  *
  * Static methods require the EventBus service in the Effect context.
  * Provide it via {@link EventBus.layer} or manually.
@@ -62,11 +21,11 @@ export class EventBus extends Context.Tag('@effect-pantry/events/EventBus')<
   {
     readonly publish: <TEvent extends AnyEvent>(
       event: TEvent,
-      payload: TEvent['~inferPayload'],
-    ) => Effect.Effect<boolean, BusError>;
+      payload: TEvent[typeof InferPayloadTypeId],
+    ) => Effect.Effect<boolean>;
     readonly subscribe: <TEvent extends AnyEvent>(
       event: TEvent,
-    ) => Stream.Stream<EnvelopeApi.Envelope<TEvent>, EventBusNotFoundError>;
+    ) => Stream.Stream<EnvelopeApi.Envelope<TEvent>, never>;
   }
 >() {
   /** Try to get the EventBus from context, returning `undefined` if absent. */
@@ -94,18 +53,16 @@ export class EventBus extends Context.Tag('@effect-pantry/events/EventBus')<
   /**
    * Publish an event. Requires the EventBus service in context.
    *
-   * Validates the payload against the event's schema before publishing.
-   * Fails with {@link EventBusNotFoundError} if the bus is not provided,
-   * or {@link EventValidationError} if the payload is invalid.
+   * Fails with {@link EventBusNotFoundError} if the bus is not provided.
    */
   static publish: <TEvent extends AnyEvent>(
     event: TEvent,
-    payload: TEvent['~inferPayload'],
-  ) => Effect.Effect<boolean, BusError> = (event, payload) =>
-    pipe(
-      EventBus.getOrFail,
-      Effect.andThen((s) => s.publish(event, payload)),
-    );
+    payload: TEvent[typeof InferPayloadTypeId],
+  ) => Effect.Effect<boolean, EventBusNotFoundError> = (event, payload) =>
+      pipe(
+        EventBus.getOrFail,
+        Effect.andThen((s) => s.publish(event, payload)),
+      );
 
   /**
    * Subscribe to events matching the given tag.
@@ -117,11 +74,11 @@ export class EventBus extends Context.Tag('@effect-pantry/events/EventBus')<
   static subscribe: <TEvent extends AnyEvent>(
     event: TEvent,
   ) => Stream.Stream<EnvelopeApi.Envelope<TEvent>, EventBusNotFoundError> = (event) =>
-    pipe(
-      EventBus.getOrFail,
-      Effect.map((s) => s.subscribe(event)),
-      Stream.unwrap,
-    );
+      pipe(
+        EventBus.getOrFail,
+        Effect.map((s) => s.subscribe(event)),
+        Stream.unwrap,
+      );
 
   /**
    * Non-failing variant of {@link publish}. Returns `Option.none()`
@@ -130,16 +87,16 @@ export class EventBus extends Context.Tag('@effect-pantry/events/EventBus')<
    */
   static publishOptional: <TEvent extends AnyEvent>(
     event: TEvent,
-    payload: TEvent['~inferPayload'],
-  ) => Effect.Effect<Option.Option<boolean>, BusError, never> = (event, payload) =>
-    Effect.gen(function* () {
-      const eventBus = yield* EventBus.getOrUndefined;
+    payload: TEvent[typeof InferPayloadTypeId],
+  ) => Effect.Effect<Option.Option<boolean>> = (event, payload) =>
+      Effect.gen(function* () {
+        const eventBus = yield* EventBus.getOrUndefined;
 
-      if (!eventBus) return Option.none();
+        if (!eventBus) return Option.none();
 
-      const result = yield* eventBus.publish(event, payload);
-      return Option.some(result);
-    });
+        const result = yield* eventBus.publish(event, payload);
+        return Option.some(result);
+      });
 
   /**
    * Non-failing variant of {@link subscribe}. Returns `Option.none()`
@@ -148,17 +105,17 @@ export class EventBus extends Context.Tag('@effect-pantry/events/EventBus')<
   static subscribeOptional: <TEvent extends AnyEvent>(
     event: TEvent,
   ) => Effect.Effect<
-    Option.Option<Stream.Stream<EnvelopeApi.Envelope<TEvent>, EventBusNotFoundError>>,
+    Option.Option<Stream.Stream<EnvelopeApi.Envelope<TEvent>, never>>,
     never,
     never
   > = (event) =>
-    Effect.gen(function* () {
-      const eventBus = yield* EventBus.getOrUndefined;
+      Effect.gen(function* () {
+        const eventBus = yield* EventBus.getOrUndefined;
 
-      if (!eventBus) return Option.none();
+        if (!eventBus) return Option.none();
 
-      return Option.some(eventBus.subscribe(event));
-    });
+        return Option.some(eventBus.subscribe(event));
+      });
 }
 
 // ── Factory ───────────────────────────────────────────────────────────
@@ -168,24 +125,24 @@ type MakeOptions = {
 };
 
 /**
- * Create an EventBus service backed by a bounded {@link PubSub}.
+ * Create an EventBus service backed by a bounded or unbounded {@link PubSub}.
  *
- * @param options.capacity - Max number of buffered events (default: `Infinity`)
+ * @param options.capacity - Max number of buffered events. If omitted, an
+ *   unbounded queue is used (never blocks publishers).
  */
-export const make = (options: MakeOptions) =>
+export const make = (options: MakeOptions = {}) =>
   Effect.gen(function* () {
-    const bus = yield* PubSub.bounded<EnvelopeApi.Envelope<AnyEvent>>({
-      capacity: options.capacity ?? Infinity,
-    });
+    const bus = yield* options.capacity !== undefined
+      ? PubSub.bounded<EnvelopeApi.Envelope<AnyEvent>>({ capacity: options.capacity })
+      : PubSub.unbounded<EnvelopeApi.Envelope<AnyEvent>>();
 
     return EventBus.of({
       publish: (event, payload) =>
         Effect.gen(function* () {
-          const validated = yield* validatePayload(event, payload);
 
           const envelope = EnvelopeApi.make({
             event,
-            payload: validated,
+            payload
           });
 
           return yield* PubSub.publish(bus, envelope);
@@ -208,7 +165,7 @@ export const make = (options: MakeOptions) =>
  * const program = Effect.provide(program, layer);
  * ```
  */
-export const layer = (options: MakeOptions) => Layer.effect(EventBus, make(options));
+export const layer = (options: MakeOptions = {}) => Layer.effect(EventBus, make(options));
 
 // Re-export static methods as module-level named exports
 export const publish = EventBus.publish;

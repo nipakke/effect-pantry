@@ -1,6 +1,5 @@
-import { StandardSchemaV1 } from '@standard-schema/spec';
 import { Predicate, Schema } from 'effect';
-import { pipeArguments } from 'effect/Pipeable';
+import { InferPayloadTypeId, AnyPayload, InferPayload } from './Payload.js';
 
 /**
  * Brand symbol for Event instances. Used by {@link isEvent} to
@@ -11,36 +10,19 @@ export const TypeId: unique symbol = Symbol.for('@effect-pantry/events/Event');
 export type TypeId = typeof TypeId;
 
 /**
- * Union of supported payload schema types. Accepts both Effect
- * {@link Schema.Schema} and framework-agnostic {@link StandardSchemaV1}
- * schemas (Zod, Valibot, ArkType, etc.).
- */
-export type AnyPayload = Schema.Schema.Any | StandardSchemaV1;
-
-/**
- * Extracts the validated output type from a payload schema.
- */
-export type InferPayload<Payload extends AnyPayload> = Payload extends Schema.Schema.Any
-  ? Schema.Schema.Type<Payload>
-  : Payload extends StandardSchemaV1
-    ? StandardSchemaV1.InferOutput<Payload>
-    : never;
-
-/**
  * A typed event definition.
  *
  * Created via {@link Event.make} — carries a string tag and an optional
- * payload schema used for runtime validation on publish.
+ * payload schema.
  *
  * @typeParam Tag - Discriminant string tag (e.g. `"user.created"`)
- * @typeParam Payload - Schema used to validate and infer the event payload
+ * @typeParam Payload - Schema used to infer the event payload
  */
 export interface Event<
   out Tag extends string,
   in out Payload extends AnyPayload = typeof Schema.Void,
 > {
-  /** Phantom property for extracting the inferred payload type */
-  ['~inferPayload']: InferPayload<Payload>;
+  readonly [InferPayloadTypeId]: InferPayload<Payload>;
   readonly [TypeId]: TypeId;
   readonly tag: Tag;
   readonly payload: Payload;
@@ -53,12 +35,7 @@ export type AnyEvent = Event<any, any>;
  */
 export const isEvent = (u: unknown): u is Event<any, any> => Predicate.hasProperty(u, TypeId);
 
-const Proto = {
-  [TypeId]: TypeId,
-  pipe() {
-    return pipeArguments(this, arguments);
-  },
-};
+const Proto = { [TypeId]: TypeId };
 
 /**
  * Create a new event definition.
@@ -76,7 +53,7 @@ const Proto = {
  */
 export const make = <
   Tag extends string,
-  Payload extends Schema.Schema.Any | StandardSchemaV1 = typeof Schema.Void,
+  Payload extends AnyPayload = typeof Schema.Void,
 >(options: {
   readonly tag: Tag;
   readonly payload?: Payload;
@@ -84,7 +61,7 @@ export const make = <
   const self = {
     payload: (options.payload ?? Schema.Void) as Payload,
     tag: options.tag,
-  } satisfies Omit<Event<Tag, Payload>, '~inferPayload' | TypeId | 'pipe'>;
+  } satisfies Omit<Event<Tag, Payload>, typeof InferPayloadTypeId | TypeId>;
 
   return Object.assign(Object.create(Proto), self);
 };

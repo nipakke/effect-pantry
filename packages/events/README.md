@@ -1,17 +1,11 @@
-Here is a complete `README.md` style documentation for your package, highlighting the `options` for both Event creation and the EventBus layer.
-
-I’ve written this assuming you implement the fixes we discussed (like making the EventBus options object optional and fixing the bounded queue behavior).
-
----
-
 # @effect-pantry/events
 
-A type-safe, in-memory event bus for Effect-TS. It features branded event definitions, schema validation, and is backed by Effect's powerful `PubSub` queues.
+A type-safe, in-memory event bus for Effect-TS. It features branded event definitions backed by Effect's powerful `PubSub` queues.
 
 ## Features
 
 * **Fully Type-Safe:** Infers payload types directly from your schemas.
-* **Schema Agnostic:** Validates payloads using `@effect/schema` or any validator matching the `@standard-schema/spec` (Zod, Valibot, ArkType).
+* **Schema Agnostic:** Supports Effect's `Schema` module or any schema matching the `@standard-schema/spec` (Zod, Valibot, ArkType).
 * **PubSub Backed:** Built on standard Effect Streams and Queues.
 
 ---
@@ -84,7 +78,7 @@ When calling `EventBus.layer(options)` or `EventBus.make(options)`, the `MakeOpt
 
 ## 3. Publishing Events
 
-Use `EventBus.publish` to emit an event. The payload must strictly match the schema you defined in `Event.make`. The bus will automatically validate the payload at runtime before emitting.
+Use `EventBus.publish` to emit an event. The payload must strictly match the schema you defined in `Event.make`.
 
 ```typescript
 import { EventBus } from '@effect-pantry/events';
@@ -140,4 +134,4 @@ Every emitted event is wrapped in an `Envelope` object:
 * **`id`** (`string`): A unique UUID generated when the event was published.
 * **`ts`** (`number`): The exact timestamp (`Date.now()`) when the event was published.
 * **`event`** (`Event`): The event definition itself.
-* **`payload`** (`InferPayload`): The validated payload data.
+* **`payload`** (`InferPayload`): The payload data.

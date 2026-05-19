@@ -1,6 +1,6 @@
-import { it, expect, assert } from '@effect/vitest';
+import { it, expect } from '@effect/vitest';
 import { Effect, Stream, Schema, Option, Fiber, pipe } from 'effect';
-import { Event, EventBus, EventValidationError, EventBusNotFoundError } from '../src/index.js';
+import { Event, EventBus, EventBusNotFoundError } from '../src/index.js';
 
 // ── Event definitions ─────────────────────────────────────────────────
 
@@ -115,21 +115,10 @@ it.layer(TestLayer)('EventBus', (it) => {
     }),
   );
 
-  it.scoped('publish with valid payload succeeds', () =>
+  it.scoped('publish succeeds', () =>
     Effect.gen(function* () {
       const result = yield* Effect.either(EventBus.publish(StringEvent, 'valid'));
       expect(result._tag).toBe('Right');
-    }),
-  );
-
-  it.scoped('publish with invalid payload fails with EventValidationError', () =>
-    Effect.gen(function* () {
-      const result = yield* Effect.either(EventBus.publish(StringEvent, 42 as unknown as string));
-      expect(result._tag).toBe('Left');
-      if (result._tag === 'Left') {
-        assert(result.left instanceof EventValidationError);
-        expect(result.left.eventTag).toBe('test.string');
-      }
     }),
   );
 });

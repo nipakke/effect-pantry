@@ -1,5 +1,4 @@
 export * as Event from './Event.js';
 export * as EventBus from './EventBus.js';
 
-export { EventValidationError, EventPublishError, EventBusNotFoundError } from './errors.js';
-export type { EventBusError } from './errors.js';
+export { EventBusNotFoundError } from './errors.js';

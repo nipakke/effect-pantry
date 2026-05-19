@@ -42,16 +42,13 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsgo",
-    "prepare": "tsgo",
+    "build": "vp pack",
     "check": "vp check",
-    "typecheck": "tsgo --noEmit",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
   "dependencies": {
-    "@effect/experimental": "catalog:",
     "@standard-schema/spec": "catalog:",
-    "@typescript/native-preview": "catalog:",
     "effect": "catalog:effect3"
   },
   "devDependencies": {
