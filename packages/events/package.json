@@ -45,7 +45,8 @@
     "build": "tsgo",
     "prepare": "tsgo",
     "check": "vp check",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsgo --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@effect/experimental": "catalog:",

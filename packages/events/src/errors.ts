@@ -17,6 +17,13 @@ export class EventPublishError extends Data.TaggedError('EventPublishError')<{
 }> {}
 
 /**
+ * The EventBus service was not provided to the Effect runtime.
+ */
+export class EventBusNotFoundError extends Data.TaggedError('EventBusNotFoundError')<{
+  readonly message: string;
+}> {}
+
+/**
  * Union of all event bus errors for exhaustive matching in Effect signatures.
  */
-export type EventBusError = EventValidationError | EventPublishError;
+export type EventBusError = EventValidationError | EventPublishError | EventBusNotFoundError;
