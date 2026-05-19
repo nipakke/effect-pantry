@@ -6,7 +6,6 @@ import * as EnvelopeApi from './Envelope.js';
 
 // ── EventBus service ──────────────────────────────────────────────────
 
-
 /**
  * In-memory typed event bus backed by Effect's {@link PubSub}.
  *
@@ -59,10 +58,10 @@ export class EventBus extends Context.Tag('@effect-pantry/events/EventBus')<
     event: TEvent,
     payload: TEvent[typeof InferPayloadTypeId],
   ) => Effect.Effect<boolean, EventBusNotFoundError> = (event, payload) =>
-      pipe(
-        EventBus.getOrFail,
-        Effect.andThen((s) => s.publish(event, payload)),
-      );
+    pipe(
+      EventBus.getOrFail,
+      Effect.andThen((s) => s.publish(event, payload)),
+    );
 
   /**
    * Subscribe to events matching the given tag.
@@ -74,11 +73,11 @@ export class EventBus extends Context.Tag('@effect-pantry/events/EventBus')<
   static subscribe: <TEvent extends AnyEvent>(
     event: TEvent,
   ) => Stream.Stream<EnvelopeApi.Envelope<TEvent>, EventBusNotFoundError> = (event) =>
-      pipe(
-        EventBus.getOrFail,
-        Effect.map((s) => s.subscribe(event)),
-        Stream.unwrap,
-      );
+    pipe(
+      EventBus.getOrFail,
+      Effect.map((s) => s.subscribe(event)),
+      Stream.unwrap,
+    );
 
   /**
    * Non-failing variant of {@link publish}. Returns `Option.none()`
@@ -89,14 +88,14 @@ export class EventBus extends Context.Tag('@effect-pantry/events/EventBus')<
     event: TEvent,
     payload: TEvent[typeof InferPayloadTypeId],
   ) => Effect.Effect<Option.Option<boolean>> = (event, payload) =>
-      Effect.gen(function* () {
-        const eventBus = yield* EventBus.getOrUndefined;
+    Effect.gen(function* () {
+      const eventBus = yield* EventBus.getOrUndefined;
 
-        if (!eventBus) return Option.none();
+      if (!eventBus) return Option.none();
 
-        const result = yield* eventBus.publish(event, payload);
-        return Option.some(result);
-      });
+      const result = yield* eventBus.publish(event, payload);
+      return Option.some(result);
+    });
 
   /**
    * Non-failing variant of {@link subscribe}. Returns `Option.none()`
@@ -109,13 +108,13 @@ export class EventBus extends Context.Tag('@effect-pantry/events/EventBus')<
     never,
     never
   > = (event) =>
-      Effect.gen(function* () {
-        const eventBus = yield* EventBus.getOrUndefined;
+    Effect.gen(function* () {
+      const eventBus = yield* EventBus.getOrUndefined;
 
-        if (!eventBus) return Option.none();
+      if (!eventBus) return Option.none();
 
-        return Option.some(eventBus.subscribe(event));
-      });
+      return Option.some(eventBus.subscribe(event));
+    });
 }
 
 // ── Factory ───────────────────────────────────────────────────────────
@@ -139,10 +138,9 @@ export const make = (options: MakeOptions = {}) =>
     return EventBus.of({
       publish: (event, payload) =>
         Effect.gen(function* () {
-
           const envelope = EnvelopeApi.make({
             event,
-            payload
+            payload,
           });
 
           return yield* PubSub.publish(bus, envelope);

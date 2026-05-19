@@ -17,7 +17,7 @@ export const isEnvelope = (u: unknown): u is Envelope<any> => Predicate.hasPrope
 /**
  * A published event wrapped with metadata.
  *
- * Carries the original event definition, the payload, 
+ * Carries the original event definition, the payload,
  * a unique id (UUID v4), and a Unix timestamp.
  */
 export interface Envelope<out TEvent extends AnyEvent> {
@@ -42,9 +42,10 @@ const Proto = { [TypeId]: TypeId };
  *
  * Automatically generates a UUID v4 id and sets the timestamp.
  */
-export const make = <TEvent extends AnyEvent>(
-  envelope: { readonly event: TEvent; readonly payload: TEvent[typeof InferPayloadTypeId] },
-): Envelope<TEvent> => {
+export const make = <TEvent extends AnyEvent>(envelope: {
+  readonly event: TEvent;
+  readonly payload: TEvent[typeof InferPayloadTypeId];
+}): Envelope<TEvent> => {
   return Object.assign(Object.create(Proto), envelope, {
     id: globalThis.crypto.randomUUID(),
     ts: Date.now(),

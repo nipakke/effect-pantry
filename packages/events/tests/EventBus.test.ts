@@ -51,7 +51,7 @@ it.layer(TestLayer)('EventBus', (it) => {
       const fiber = yield* Effect.fork(takeOne(stream));
       // Advance the TestClock to let the runtime process the forked fiber
       // and establish the PubSub subscription before we publish.
-      yield* TestClock.adjust("10000 millis");
+      yield* TestClock.adjust('10000 millis');
       yield* EventBus.publish(StringEvent, 'hello world');
 
       const envelope = yield* Fiber.join(fiber);
@@ -64,7 +64,7 @@ it.layer(TestLayer)('EventBus', (it) => {
       const stream = EventBus.subscribe(StringEvent);
 
       const fiber = yield* Effect.fork(takeOne(stream));
-      yield* TestClock.adjust("0 millis");
+      yield* TestClock.adjust('0 millis');
       yield* EventBus.publish(NumberEvent, 99);
       yield* EventBus.publish(StringEvent, 'only string');
 
@@ -81,7 +81,7 @@ it.layer(TestLayer)('EventBus', (it) => {
 
       const fiber1 = yield* Effect.fork(takeOne(stream1));
       const fiber2 = yield* Effect.fork(takeOne(stream2));
-      yield* TestClock.adjust("0 millis");
+      yield* TestClock.adjust('0 millis');
 
       yield* EventBus.publish(StringEvent, 'broadcast');
 
@@ -109,7 +109,7 @@ it.layer(TestLayer)('EventBus', (it) => {
       if (!Option.isSome(opt)) return;
 
       const fiber = yield* Effect.fork(takeOne(opt.value));
-      yield* TestClock.adjust("0 millis");
+      yield* TestClock.adjust('0 millis');
       yield* EventBus.publish(StringEvent, 'via optional');
 
       const envelope = yield* Fiber.join(fiber);

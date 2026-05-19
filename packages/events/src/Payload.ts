@@ -24,5 +24,5 @@ export type AnyPayload = Schema.Schema.Any | StandardSchemaV1;
 export type InferPayload<Payload extends AnyPayload> = Payload extends Schema.Schema.Any
   ? Schema.Schema.Type<Payload>
   : Payload extends StandardSchemaV1
-  ? StandardSchemaV1.InferOutput<Payload>
-  : never;
+    ? StandardSchemaV1.InferOutput<Payload>
+    : never;

@@ -51,10 +51,7 @@ const Proto = { [TypeId]: TypeId };
  * @param options.tag - Unique string identifier for the event
  * @param options.payload - Schema for the event payload (defaults to `Schema.Void`)
  */
-export const make = <
-  Tag extends string,
-  Payload extends AnyPayload = typeof Schema.Void,
->(options: {
+export const make = <Tag extends string, Payload extends AnyPayload = typeof Schema.Void>(options: {
   readonly tag: Tag;
   readonly payload?: Payload;
 }): Event<Tag, Payload> => {
