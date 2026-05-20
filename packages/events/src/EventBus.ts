@@ -22,7 +22,7 @@ export class EventBus extends Context.Tag('@effect-pantry/events/EventBus')<
 
     readonly subscribe: <TEvent extends Event.AnyEvent>(
       event: TEvent,
-    ) => Stream.Stream<EnvelopeApi.Envelope<TEvent>, never>;
+    ) => Stream.Stream<EnvelopeApi.Envelope<TEvent>>;
 
     readonly unsafePublish: <TEvent extends Event.AnyEvent>(
       event: TEvent,
@@ -31,12 +31,19 @@ export class EventBus extends Context.Tag('@effect-pantry/events/EventBus')<
   }
 >() {}
 
-/** Try to get the EventBus from context, returning `undefined` if absent. */
-const getOrUndefined = pipe(Effect.serviceOption(EventBus), Effect.map(Option.getOrUndefined));
+/**
+ * Get the EventBus from context as an `Option`, returning `none` when absent.
+ *
+ * @example
+ * ```ts
+ * const maybeBus = yield* EventBus.getOption;
+ * ```
+ */
+export const getOption = Effect.serviceOption(EventBus);
 
 /** Get the EventBus from context, failing with {@link EventBusNotFoundError} if absent. */
 const getOrFail = pipe(
-  Effect.serviceOption(EventBus),
+  getOption,
   Effect.flatMap(
     Option.match({
       onNone: () =>
@@ -90,11 +97,11 @@ export const publishOptional: <TEvent extends Event.AnyEvent>(
   input: TEvent[typeof Event.MetaTypeId]['input'],
 ) => Effect.Effect<Option.Option<boolean>, Errors.SchemaParseError> = (event, input) =>
   Effect.gen(function* () {
-    const eventBus = yield* getOrUndefined;
+    const eventBus = yield* getOption;
 
-    if (!eventBus) return Option.none();
+    if (Option.isNone(eventBus)) return Option.none();
 
-    const result = yield* eventBus.publish(event, input);
+    const result = yield* eventBus.value.publish(event, input);
     return Option.some(result);
   });
 
@@ -104,17 +111,13 @@ export const publishOptional: <TEvent extends Event.AnyEvent>(
  */
 export const subscribeOptional: <TEvent extends Event.AnyEvent>(
   event: TEvent,
-) => Effect.Effect<
-  Option.Option<Stream.Stream<EnvelopeApi.Envelope<TEvent>, never>>,
-  never,
-  never
-> = (event) =>
+) => Effect.Effect<Option.Option<Stream.Stream<EnvelopeApi.Envelope<TEvent>>>> = (event) =>
   Effect.gen(function* () {
-    const eventBus = yield* getOrUndefined;
+    const eventBus = yield* getOption;
 
-    if (!eventBus) return Option.none();
+    if (Option.isNone(eventBus)) return Option.none();
 
-    return Option.some(eventBus.subscribe(event));
+    return Option.some(eventBus.value.subscribe(event));
   });
 
 type MakeOptions = {
