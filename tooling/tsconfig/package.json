@@ -4,9 +4,11 @@
   "private": true,
   "description": "Shared TypeScript configuration for effect-pantry packages",
   "files": [
-    "tsconfig.base.json"
+    "tsconfig.base.json",
+    "tsconfig.build.json"
   ],
   "exports": {
-    "./tsconfig.base.json": "./tsconfig.base.json"
+    "./tsconfig.base.json": "./tsconfig.base.json",
+    "./tsconfig.build.json": "./tsconfig.build.json"
   }
 }

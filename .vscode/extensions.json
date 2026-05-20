@@ -1,3 +1,7 @@
 {
-  "recommendations": ["VoidZero.vite-plus-extension-pack", "effect.vscode-effect"]
+  "recommendations": [
+    "VoidZero.vite-plus-extension-pack",
+    "effect.vscode-effect",
+    "vercel.turbo-vsc"
+  ]
 }
