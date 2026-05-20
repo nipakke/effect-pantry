@@ -42,14 +42,12 @@ jobs:
         run: vp install
 
       - name: Build packages
-        run: vp run -r pack
+        run: turbo build
 
       - name: Create Release Pull Request or Publish to npm
         id: changesets
         uses: changesets/action@v1
         with:
           publish: vp exec changeset publish
-          commit: "chore: version packages"
-          title: "chore: version packages"
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}

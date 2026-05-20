@@ -23,28 +23,22 @@
     "dist"
   ],
   "type": "module",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.mts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/index.d.mts",
-        "default": "./dist/index.mjs"
-      },
-      "require": {
-        "types": "./dist/index.d.cts",
-        "default": "./dist/index.cjs"
-      }
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     }
   },
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
-    "build": "vp pack",
+    "clean": "rimraf dist",
+    "build": "pnpm clean && tsgo",
     "check": "vp check",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
     "test": "vitest run"
   },
   "dependencies": {
@@ -56,6 +50,8 @@
     "@effect/vitest": "catalog:effect3",
     "@tooling/tsconfig": "workspace:*",
     "@types/node": "catalog:",
+    "@typescript/native-preview": "catalog:",
+    "rimraf": "catalog:",
     "vite-plus": "catalog:",
     "vitest": "catalog:"
   },

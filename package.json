@@ -2,22 +2,21 @@
   "name": "effect-pantry",
   "private": true,
   "scripts": {
-    "test": "vp run -r test",
+    "test": "turbo test",
     "lint": "vp lint",
     "fmt": "vp fmt",
     "check": "vp check",
-    "pack": "vp run -r pack",
+    "build": "turbo build",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "vp run -r pack && changeset publish",
-    "typecheck": "vp run -r typecheck"
-  },
-  "dependencies": {
-    "@changesets/changelog-github": "catalog:"
+    "release": "turbo build && changeset publish",
+    "typecheck": "turbo typecheck"
   },
   "devDependencies": {
+    "@changesets/changelog-github": "catalog:",
     "@changesets/cli": "catalog:",
     "@tooling/vite-config": "workspace:*",
+    "turbo": "catalog:",
     "typescript": "catalog:",
     "vite-plus": "catalog:",
     "vitest": "catalog:"
