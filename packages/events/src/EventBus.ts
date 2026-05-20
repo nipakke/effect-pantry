@@ -1,10 +1,8 @@
 import { Effect, Context, PubSub, Stream, pipe, Layer, Option } from 'effect';
-import { EventBusNotFoundError } from './errors.js';
+import { EventBusNotFoundError } from './Errors.js';
 import { AnyEvent } from './Event.js';
 import { InferPayloadTypeId } from './Payload.js';
 import * as EnvelopeApi from './Envelope.js';
-
-// ── EventBus service ──────────────────────────────────────────────────
 
 /**
  * In-memory typed event bus backed by Effect's {@link PubSub}.
@@ -12,7 +10,6 @@ import * as EnvelopeApi from './Envelope.js';
  * Provides publish/subscribe with per-event-tag filtering and both
  * fail-fast and optional access patterns.
  *
- * Static methods require the EventBus service in the Effect context.
  * Provide it via {@link EventBus.layer} or manually.
  */
 export class EventBus extends Context.Tag('@effect-pantry/events/EventBus')<
@@ -22,102 +19,101 @@ export class EventBus extends Context.Tag('@effect-pantry/events/EventBus')<
       event: TEvent,
       payload: TEvent[typeof InferPayloadTypeId],
     ) => Effect.Effect<boolean>;
+
     readonly subscribe: <TEvent extends AnyEvent>(
       event: TEvent,
     ) => Stream.Stream<EnvelopeApi.Envelope<TEvent>, never>;
+
+    readonly unsafeOffer: <TEvent extends AnyEvent>(
+      event: TEvent,
+      payload: TEvent[typeof InferPayloadTypeId],
+    ) => boolean;
   }
->() {
-  /** Try to get the EventBus from context, returning `undefined` if absent. */
-  private static getOrUndefined = pipe(
-    Effect.serviceOption(EventBus),
-    Effect.map(Option.getOrUndefined),
+>() {}
+
+/** Try to get the EventBus from context, returning `undefined` if absent. */
+const getOrUndefined = pipe(Effect.serviceOption(EventBus), Effect.map(Option.getOrUndefined));
+
+/** Get the EventBus from context, failing with {@link EventBusNotFoundError} if absent. */
+const getOrFail = pipe(
+  Effect.serviceOption(EventBus),
+  Effect.flatMap(
+    Option.match({
+      onNone: () =>
+        Effect.fail(
+          new EventBusNotFoundError({
+            message: 'EventBus service not provided. Use EventBus.layer or provide it manually.',
+          }),
+        ),
+      onSome: (bus) => Effect.succeed(bus),
+    }),
+  ),
+);
+
+/**
+ * Publish an event. Requires the EventBus service in context.
+ *
+ * Fails with {@link EventBusNotFoundError} if the bus is not provided.
+ */
+export function publish<TEvent extends AnyEvent>(
+  event: TEvent,
+  payload: TEvent[typeof InferPayloadTypeId],
+): Effect.Effect<boolean, EventBusNotFoundError> {
+  return pipe(
+    getOrFail,
+    Effect.andThen((s) => s.publish(event, payload)),
   );
-
-  /** Get the EventBus from context, failing with {@link EventBusNotFoundError} if absent. */
-  private static getOrFail = pipe(
-    Effect.serviceOption(EventBus),
-    Effect.flatMap(
-      Option.match({
-        onNone: () =>
-          Effect.fail(
-            new EventBusNotFoundError({
-              message: 'EventBus service not provided. Use EventBus.layer or provide it manually.',
-            }),
-          ),
-        onSome: (bus) => Effect.succeed(bus),
-      }),
-    ),
-  );
-
-  /**
-   * Publish an event. Requires the EventBus service in context.
-   *
-   * Fails with {@link EventBusNotFoundError} if the bus is not provided.
-   */
-  static publish: <TEvent extends AnyEvent>(
-    event: TEvent,
-    payload: TEvent[typeof InferPayloadTypeId],
-  ) => Effect.Effect<boolean, EventBusNotFoundError> = (event, payload) =>
-    pipe(
-      EventBus.getOrFail,
-      Effect.andThen((s) => s.publish(event, payload)),
-    );
-
-  /**
-   * Subscribe to events matching the given tag.
-   *
-   * Returns a {@link Stream} of {@link Envelope} objects filtered to
-   * only the matching event tag. Requires the EventBus service in context.
-   * Fails with {@link EventBusNotFoundError} if not provided.
-   */
-  static subscribe: <TEvent extends AnyEvent>(
-    event: TEvent,
-  ) => Stream.Stream<EnvelopeApi.Envelope<TEvent>, EventBusNotFoundError> = (event) =>
-    pipe(
-      EventBus.getOrFail,
-      Effect.map((s) => s.subscribe(event)),
-      Stream.unwrap,
-    );
-
-  /**
-   * Non-failing variant of {@link publish}. Returns `Option.none()`
-   * if the EventBus is not in context, or `Option.some(result)` with
-   * the publish result if it is.
-   */
-  static publishOptional: <TEvent extends AnyEvent>(
-    event: TEvent,
-    payload: TEvent[typeof InferPayloadTypeId],
-  ) => Effect.Effect<Option.Option<boolean>> = (event, payload) =>
-    Effect.gen(function* () {
-      const eventBus = yield* EventBus.getOrUndefined;
-
-      if (!eventBus) return Option.none();
-
-      const result = yield* eventBus.publish(event, payload);
-      return Option.some(result);
-    });
-
-  /**
-   * Non-failing variant of {@link subscribe}. Returns `Option.none()`
-   * if the EventBus is not in context, or `Option.some(stream)` if it is.
-   */
-  static subscribeOptional: <TEvent extends AnyEvent>(
-    event: TEvent,
-  ) => Effect.Effect<
-    Option.Option<Stream.Stream<EnvelopeApi.Envelope<TEvent>, never>>,
-    never,
-    never
-  > = (event) =>
-    Effect.gen(function* () {
-      const eventBus = yield* EventBus.getOrUndefined;
-
-      if (!eventBus) return Option.none();
-
-      return Option.some(eventBus.subscribe(event));
-    });
 }
 
-// ── Factory ───────────────────────────────────────────────────────────
+export function subscribe<TEvent extends AnyEvent>(
+  event: TEvent,
+): Stream.Stream<EnvelopeApi.Envelope<AnyEvent>, EventBusNotFoundError> {
+  return pipe(
+    getOrFail,
+    Effect.map((s) => s.subscribe(event)),
+    Stream.unwrap,
+  );
+}
+
+//TODO: publishWith/subscribeWith static function for a pipeable approach (dual fn)
+//https://effect-ts.github.io/effect/effect/Function.ts.html#dual
+
+/**
+ * Non-failing variant of {@link publish}. Returns `Option.none()`
+ * if the EventBus is not in context, or `Option.some(result)` with
+ * the publish result if it is.
+ */
+export const publishOptional: <TEvent extends AnyEvent>(
+  event: TEvent,
+  payload: TEvent[typeof InferPayloadTypeId],
+) => Effect.Effect<Option.Option<boolean>> = (event, payload) =>
+  Effect.gen(function* () {
+    const eventBus = yield* getOrUndefined;
+
+    if (!eventBus) return Option.none();
+
+    const result = yield* eventBus.publish(event, payload);
+    return Option.some(result);
+  });
+
+/**
+ * Non-failing variant of {@link subscribe}. Returns `Option.none()`
+ * if the EventBus is not in context, or `Option.some(stream)` if it is.
+ */
+export const subscribeOptional: <TEvent extends AnyEvent>(
+  event: TEvent,
+) => Effect.Effect<
+  Option.Option<Stream.Stream<EnvelopeApi.Envelope<TEvent>, never>>,
+  never,
+  never
+> = (event) =>
+  Effect.gen(function* () {
+    const eventBus = yield* getOrUndefined;
+
+    if (!eventBus) return Option.none();
+
+    return Option.some(eventBus.subscribe(event));
+  });
 
 type MakeOptions = {
   readonly capacity?: number;
@@ -153,6 +149,14 @@ export const make = (options: MakeOptions = {}) =>
               env.event.tag === expectedEvent.tag,
           ),
         ),
+      unsafeOffer(event, payload) {
+        const envelope = EnvelopeApi.make({
+          event,
+          payload,
+        });
+
+        return bus.unsafeOffer(envelope);
+      },
     });
   });
 
@@ -166,9 +170,3 @@ export const make = (options: MakeOptions = {}) =>
  * ```
  */
 export const layer = (options: MakeOptions = {}) => Layer.effect(EventBus, make(options));
-
-// Re-export static methods as module-level named exports
-export const publish = EventBus.publish;
-export const subscribe = EventBus.subscribe;
-export const publishOptional = EventBus.publishOptional;
-export const subscribeOptional = EventBus.subscribeOptional;
