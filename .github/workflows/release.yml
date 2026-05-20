@@ -42,7 +42,7 @@ jobs:
         run: vp install
 
       - name: Build packages
-        run: turbo build
+        run: vp run build
 
       - name: Create Release Pull Request or Publish to npm
         id: changesets
