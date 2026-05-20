@@ -53,5 +53,16 @@ jobs:
           cache: true
 
       - run: vp install
+      - run: corepack enable
       - run: pnpm build
       - run: pnpm test
+
+  test-ok:
+    name: Tests OK
+    needs: test
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - if: ${{ needs.test.result != 'success' }}
+        run: exit 1
+      - run: echo "All matrix jobs passed"
