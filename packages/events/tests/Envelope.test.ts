@@ -1,6 +1,7 @@
 import { it, expect } from '@effect/vitest';
 import { Schema } from 'effect';
-import { Event, Envelope } from '../src/index.js';
+import * as Event from '../src/Event.js';
+import * as Envelope from '../src/Envelope.js';
 
 // ── Minimal Event definition ────────────────────────────────────────
 
@@ -13,8 +14,7 @@ const TestEvent = Event.make({
 // Envelope.make tests
 // ═════════════════════════════════════════════════════════════════════
 
-const uuidV4Regex =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const uuidV4Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 it('Envelope.make creates an envelope with id, ts, event, payload', () => {
   const envelope = Envelope.make({ event: TestEvent, payload: 'test' });

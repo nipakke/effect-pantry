@@ -1,6 +1,8 @@
 import { it, expect } from '@effect/vitest';
 import { Effect, Stream, Schema, Option, Fiber, TestClock, pipe } from 'effect';
-import { Event, EventBus, EventBusNotFoundError } from '../src/index.js';
+import * as Event from '../src/Event.js';
+import * as EventBus from '../src/EventBus.js';
+import * as Errors from '../src/Errors.js';
 
 // ── Event definitions ─────────────────────────────────────────────────
 
@@ -142,26 +144,20 @@ it.layer(TestLayer)('EventBus', (it) => {
 
 it.effect('publish without EventBus fails with EventBusNotFoundError', () =>
   Effect.gen(function* () {
-    const result = yield* Effect.either(
-      EventBus.publish(StringEvent, 'fail'),
-    );
+    const result = yield* Effect.either(EventBus.publish(StringEvent, 'fail'));
     expect(result._tag).toBe('Left');
     if (result._tag === 'Left') {
-      expect(result.left).toBeInstanceOf(EventBusNotFoundError);
+      expect(result.left).toBeInstanceOf(Errors.EventBusNotFoundError);
     }
   }),
 );
 
 it.effect('subscribe without EventBus fails with EventBusNotFoundError', () =>
   Effect.gen(function* () {
-    const result = yield* pipe(
-      EventBus.subscribe(StringEvent),
-      Stream.runCollect,
-      Effect.either,
-    );
+    const result = yield* pipe(EventBus.subscribe(StringEvent), Stream.runCollect, Effect.either);
     expect(result._tag).toBe('Left');
     if (result._tag === 'Left') {
-      expect(result.left).toBeInstanceOf(EventBusNotFoundError);
+      expect(result.left).toBeInstanceOf(Errors.EventBusNotFoundError);
     }
   }),
 );

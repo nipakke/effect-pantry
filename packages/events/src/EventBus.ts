@@ -1,7 +1,6 @@
 import { Effect, Context, PubSub, Stream, pipe, Layer, Option } from 'effect';
-import { EventBusNotFoundError } from './Errors.js';
-import { AnyEvent } from './Event.js';
-import { InferPayloadTypeId } from './Payload.js';
+import * as Errors from './Errors.js';
+import * as Event from './Event.js';
 import * as EnvelopeApi from './Envelope.js';
 
 /**
@@ -15,18 +14,18 @@ import * as EnvelopeApi from './Envelope.js';
 export class EventBus extends Context.Tag('@effect-pantry/events/EventBus')<
   EventBus,
   {
-    readonly publish: <TEvent extends AnyEvent>(
+    readonly publish: <TEvent extends Event.AnyEvent>(
       event: TEvent,
-      payload: TEvent[typeof InferPayloadTypeId],
+      payload: TEvent[typeof Event.MetaTypeId]['inferPayload'],
     ) => Effect.Effect<boolean>;
 
-    readonly subscribe: <TEvent extends AnyEvent>(
+    readonly subscribe: <TEvent extends Event.AnyEvent>(
       event: TEvent,
     ) => Stream.Stream<EnvelopeApi.Envelope<TEvent>, never>;
 
-    readonly unsafePublish: <TEvent extends AnyEvent>(
+    readonly unsafePublish: <TEvent extends Event.AnyEvent>(
       event: TEvent,
-      payload: TEvent[typeof InferPayloadTypeId],
+      payload: TEvent[typeof Event.MetaTypeId]['inferPayload'],
     ) => boolean;
   }
 >() {}
@@ -41,7 +40,7 @@ const getOrFail = pipe(
     Option.match({
       onNone: () =>
         Effect.fail(
-          new EventBusNotFoundError({
+          new Errors.EventBusNotFoundError({
             message: 'EventBus service not provided. Use EventBus.layer or provide it manually.',
           }),
         ),
@@ -55,19 +54,19 @@ const getOrFail = pipe(
  *
  * Fails with {@link EventBusNotFoundError} if the bus is not provided.
  */
-export function publish<TEvent extends AnyEvent>(
+export function publish<TEvent extends Event.AnyEvent>(
   event: TEvent,
-  payload: TEvent[typeof InferPayloadTypeId],
-): Effect.Effect<boolean, EventBusNotFoundError> {
+  payload: TEvent[typeof Event.MetaTypeId]['inferPayload'],
+): Effect.Effect<boolean, Errors.EventBusNotFoundError> {
   return pipe(
     getOrFail,
     Effect.andThen((s) => s.publish(event, payload)),
   );
 }
 
-export function subscribe<TEvent extends AnyEvent>(
+export function subscribe<TEvent extends Event.AnyEvent>(
   event: TEvent,
-): Stream.Stream<EnvelopeApi.Envelope<AnyEvent>, EventBusNotFoundError> {
+): Stream.Stream<EnvelopeApi.Envelope<Event.AnyEvent>, Errors.EventBusNotFoundError> {
   return pipe(
     getOrFail,
     Effect.map((s) => s.subscribe(event)),
@@ -83,9 +82,9 @@ export function subscribe<TEvent extends AnyEvent>(
  * if the EventBus is not in context, or `Option.some(result)` with
  * the publish result if it is.
  */
-export const publishOptional: <TEvent extends AnyEvent>(
+export const publishOptional: <TEvent extends Event.AnyEvent>(
   event: TEvent,
-  payload: TEvent[typeof InferPayloadTypeId],
+  payload: TEvent[typeof Event.MetaTypeId]['inferPayload'],
 ) => Effect.Effect<Option.Option<boolean>> = (event, payload) =>
   Effect.gen(function* () {
     const eventBus = yield* getOrUndefined;
@@ -100,7 +99,7 @@ export const publishOptional: <TEvent extends AnyEvent>(
  * Non-failing variant of {@link subscribe}. Returns `Option.none()`
  * if the EventBus is not in context, or `Option.some(stream)` if it is.
  */
-export const subscribeOptional: <TEvent extends AnyEvent>(
+export const subscribeOptional: <TEvent extends Event.AnyEvent>(
   event: TEvent,
 ) => Effect.Effect<
   Option.Option<Stream.Stream<EnvelopeApi.Envelope<TEvent>, never>>,
@@ -128,8 +127,8 @@ type MakeOptions = {
 export const make = (options: MakeOptions = {}) =>
   Effect.gen(function* () {
     const bus = yield* options.capacity !== undefined
-      ? PubSub.bounded<EnvelopeApi.Envelope<AnyEvent>>({ capacity: options.capacity })
-      : PubSub.unbounded<EnvelopeApi.Envelope<AnyEvent>>();
+      ? PubSub.bounded<EnvelopeApi.Envelope<Event.AnyEvent>>({ capacity: options.capacity })
+      : PubSub.unbounded<EnvelopeApi.Envelope<Event.AnyEvent>>();
 
     return EventBus.of({
       publish: (event, payload) =>

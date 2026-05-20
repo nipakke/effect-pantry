@@ -1,6 +1,6 @@
 import { it, expect } from '@effect/vitest';
 import { Schema } from 'effect';
-import { Event } from '../src/index.js';
+import * as Event from '../src/Event.js';
 
 // ── Inline Event definitions ────────────────────────────────────────
 
@@ -18,6 +18,7 @@ const VoidEvent = Event.make({ tag: 'test.void' });
 it('Event.make creates a tagged event definition with correct tag', () => {
   expect(StringEvent.tag).toBe('test.string');
   expect(StringEvent.payload).toBe(Schema.String);
+  expect(VoidEvent.payload).toBe(Schema.Void);
 });
 
 it('Event.make defaults payload to Schema.Void when omitted', () => {

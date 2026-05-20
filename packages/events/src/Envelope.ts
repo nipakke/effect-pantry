@@ -1,6 +1,5 @@
 import { Predicate } from 'effect';
-import { InferPayloadTypeId } from './Payload.js';
-import { AnyEvent } from './Event.js';
+import * as Event from './Event.js';
 
 /**
  * Brand symbol for Envelope instances.
@@ -20,7 +19,7 @@ export const isEnvelope = (u: unknown): u is Envelope<any> => Predicate.hasPrope
  * Carries the original event definition, the payload,
  * a unique id (UUID v4), and a Unix timestamp.
  */
-export interface Envelope<out TEvent extends AnyEvent> {
+export interface Envelope<out TEvent extends Event.AnyEvent> {
   readonly [TypeId]: TypeId;
   /** Unique identifier for this event occurrence (UUID v4) */
   readonly id: string;
@@ -29,7 +28,7 @@ export interface Envelope<out TEvent extends AnyEvent> {
   /** Unix timestamp (milliseconds) of when the envelope was created */
   readonly ts: number;
   /** The payload matching the event's schema */
-  readonly payload: TEvent[typeof InferPayloadTypeId];
+  readonly payload: TEvent[typeof Event.MetaTypeId]['inferPayload'];
 }
 
 /** Strip the brand symbol from an Envelope type. */
@@ -42,9 +41,9 @@ const Proto = { [TypeId]: TypeId };
  *
  * Automatically generates a UUID v4 id and sets the timestamp.
  */
-export const make = <TEvent extends AnyEvent>(envelope: {
+export const make = <TEvent extends Event.AnyEvent>(envelope: {
   readonly event: TEvent;
-  readonly payload: TEvent[typeof InferPayloadTypeId];
+  readonly payload: TEvent[typeof Event.MetaTypeId]['inferPayload'];
 }): Envelope<TEvent> => {
   return Object.assign(Object.create(Proto), envelope, {
     id: globalThis.crypto.randomUUID(),

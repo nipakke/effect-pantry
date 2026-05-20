@@ -1,5 +1,5 @@
 import { Predicate, Schema } from 'effect';
-import { InferPayloadTypeId, AnyPayload, InferPayload } from './Payload.js';
+import * as Payload from './Payload.js';
 
 /**
  * Brand symbol for Event instances. Used by {@link isEvent} to
@@ -10,19 +10,43 @@ export const TypeId: unique symbol = Symbol.for('@effect-pantry/events/Event');
 export type TypeId = typeof TypeId;
 
 /**
+ * Meta typeid — single access point for system-level event metadata.
+ *
+ * All internal machinery (payload schema, inferred type, etc.) lives
+ * behind this symbol so the `Event` interface stays clean and
+ * extensible for future system-level additions.
+ */
+export const MetaTypeId: unique symbol = Symbol.for('@effect-pantry/events/Event.Meta');
+
+export type MetaTypeId = typeof MetaTypeId;
+
+/**
+ * System-level metadata attached to every {@link Event}.
+ *
+ * Holds phantom type information (like the inferred payload type) and
+ * any future internal fields the framework needs — things *added by the
+ * system*, not the user. User-facing properties like {@link Event.payload}
+ * live directly on the {@link Event} interface.
+ */
+export interface EventMeta<Payload extends Payload.AnyPayload> {
+  readonly inferPayload: Payload.InferPayload<Payload>;
+}
+
+/**
  * A typed event definition.
  *
  * Created via {@link Event.make} — carries a string tag and an optional
- * payload schema.
+ * payload schema. System-level metadata (inferred type, etc.) lives
+ * behind the {@link MetaTypeId} symbol.
  *
  * @typeParam Tag - Discriminant string tag (e.g. `"user.created"`)
  * @typeParam Payload - Schema used to infer the event payload
  */
 export interface Event<
   out Tag extends string,
-  in out Payload extends AnyPayload = typeof Schema.Void,
+  in out Payload extends Payload.AnyPayload = typeof Schema.Void,
 > {
-  readonly [InferPayloadTypeId]: InferPayload<Payload>;
+  readonly [MetaTypeId]: EventMeta<Payload>;
   readonly [TypeId]: TypeId;
   readonly tag: Tag;
   readonly payload: Payload;
@@ -51,14 +75,15 @@ const Proto = { [TypeId]: TypeId };
  * @param options.tag - Unique string identifier for the event
  * @param options.payload - Schema for the event payload (defaults to `Schema.Void`)
  */
-export const make = <Tag extends string, Payload extends AnyPayload = typeof Schema.Void>(options: {
+export const make = <Tag extends string, Payload extends Payload.AnyPayload = typeof Schema.Void>(options: {
   readonly tag: Tag;
   readonly payload?: Payload;
 }): Event<Tag, Payload> => {
+  const payload: Payload = (options.payload ?? Schema.Void) as Payload;
   const self = {
-    payload: (options.payload ?? Schema.Void) as Payload,
     tag: options.tag,
-  } satisfies Omit<Event<Tag, Payload>, typeof InferPayloadTypeId | TypeId>;
-
-  return Object.assign(Object.create(Proto), self);
+    payload,
+    [MetaTypeId]: {} as EventMeta<Payload>,
+  };
+  return Object.assign(Object.create(Proto), self)
 };

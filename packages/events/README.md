@@ -197,18 +197,18 @@ Because `EventBus` is just a `Context.Tag`, you can implement your own bus and p
 
 ```ts
 {
-  readonly publish: <TEvent extends AnyEvent>(
+  readonly publish: <TEvent extends Event.AnyEvent>(
     event: TEvent,
-    payload: TEvent[typeof InferPayloadTypeId],
+    payload: TEvent[typeof Event.MetaTypeId]['inferPayload'],
   ) => Effect.Effect<boolean>
 
-  readonly subscribe: <TEvent extends AnyEvent>(
+  readonly subscribe: <TEvent extends Event.AnyEvent>(
     event: TEvent,
-  ) => Stream.Stream<Envelope<TEvent>, never>
+  ) => Stream.Stream<Envelope.Envelope<TEvent>, never>
 
-  readonly unsafePublish: <TEvent extends AnyEvent>(
+  readonly unsafePublish: <TEvent extends Event.AnyEvent>(
     event: TEvent,
-    payload: TEvent[typeof InferPayloadTypeId],
+    payload: TEvent[typeof Event.MetaTypeId]['inferPayload'],
   ) => boolean
 }
 ```
@@ -298,6 +298,8 @@ const program = Effect.provide(myProgram, RecordingBusLayer)
 | --------------- | ------------------------------------------ |
 | `Event.make(options)` | Create an event definition with `tag` and optional `payload`. |
 | `Event.isEvent(u)`    | Runtime type guard. Returns `true` for Event instances. |
+| `Event.MetaTypeId`    | Symbol key for accessing system-level event metadata (`EventMeta`). |
+| `Event.EventMeta<Payload>` | Container for system-level type information (e.g. `inferPayload`). |
 
 ### `EventBus`
 
@@ -324,14 +326,23 @@ const program = Effect.provide(myProgram, RecordingBusLayer)
 | ----------------------- | ---------------------------------------------- |
 | `EventBusNotFoundError` | Thrown when EventBus is not in the context.     |
 
+### Symbols
+
+| Export               | Description                                           |
+| -------------------- | ----------------------------------------------------- |
+| `Event.TypeId`       | Brand symbol for Event instances.                     |
+| `Event.MetaTypeId`   | Symbol key for accessing system-level event metadata. |
+| `Envelope.TypeId`    | Brand symbol for Envelope instances.                  |
+
 ### Types
 
 | Export                    | Description                                               |
 | ------------------------- | --------------------------------------------------------- |
-| `Event<Tag, Payload>`     | Typed event definition.                                   |
-| `Envelope<TEvent>`        | Published event with `id`, `ts`, `event`, and `payload`.  |
-| `AnyPayload`              | `Schema.Schema.Any \| StandardSchemaV1`.                  |
-| `InferPayload<Payload>`   | Extracts the output type from a payload schema.            |
+| `Event<Tag, Payload>`              | Typed event definition.                                     |
+| `Event.EventMeta<Payload>`         | System-level event metadata (inferred payload type, etc.). |
+| `Envelope<TEvent>`                 | Published event with `id`, `ts`, `event`, and `payload`.    |
+| `AnyPayload`                       | `Schema.Schema.Any \| StandardSchemaV1`.                    |
+| `InferPayload<Payload>`            | Extracts the output type from a payload schema.             |
 
 ## License
 
