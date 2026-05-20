@@ -24,7 +24,7 @@ export class EventBus extends Context.Tag('@effect-pantry/events/EventBus')<
       event: TEvent,
     ) => Stream.Stream<EnvelopeApi.Envelope<TEvent>, never>;
 
-    readonly unsafeOffer: <TEvent extends AnyEvent>(
+    readonly unsafePublish: <TEvent extends AnyEvent>(
       event: TEvent,
       payload: TEvent[typeof InferPayloadTypeId],
     ) => boolean;
@@ -149,7 +149,7 @@ export const make = (options: MakeOptions = {}) =>
               env.event.tag === expectedEvent.tag,
           ),
         ),
-      unsafeOffer(event, payload) {
+      unsafePublish(event, payload) {
         const envelope = EnvelopeApi.make({
           event,
           payload,
