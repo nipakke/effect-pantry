@@ -27,12 +27,18 @@ export interface Envelope<out TEvent extends Event.AnyEvent> {
   readonly event: TEvent;
   /** Unix timestamp (milliseconds) of when the envelope was created */
   readonly ts: number;
-  /** The payload matching the event's schema */
-  readonly payload: TEvent[typeof Event.MetaTypeId]['inferPayload'];
+  /** The payload matching the event's schema (output/decoded type) */
+  readonly payload: TEvent[typeof Event.MetaTypeId]['output'];
 }
 
 /** Strip the brand symbol from an Envelope type. */
 export type WithoutBrand<T extends Envelope<any>> = Omit<T, TypeId>;
+
+/**
+ * Extract the output payload type from an Event definition.
+ * Convenience type for use with {@link Payload.parse} / {@link Payload.parseSync}.
+ */
+export type ExtractPayload<T extends Event.AnyEvent> = T[typeof Event.MetaTypeId]['output'];
 
 const Proto = { [TypeId]: TypeId };
 
@@ -43,7 +49,7 @@ const Proto = { [TypeId]: TypeId };
  */
 export const make = <TEvent extends Event.AnyEvent>(envelope: {
   readonly event: TEvent;
-  readonly payload: TEvent[typeof Event.MetaTypeId]['inferPayload'];
+  readonly payload: TEvent[typeof Event.MetaTypeId]['output'];
 }): Envelope<TEvent> => {
   return Object.assign(Object.create(Proto), envelope, {
     id: globalThis.crypto.randomUUID(),

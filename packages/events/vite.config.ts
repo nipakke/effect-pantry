@@ -12,4 +12,10 @@ export default defineConfig({
   test: {
     include: ['tests/**/*.test.ts'],
   },
+  fmt: {
+    ignorePatterns: [],
+  },
+  lint: {
+    ignorePatterns: [],
+  },
 });

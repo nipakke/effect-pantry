@@ -1,5 +1,5 @@
 import { it, expect } from '@effect/vitest';
-import { Effect, Stream, Schema, Option, Fiber, TestClock, pipe } from 'effect';
+import { Effect, Stream, Schema, Option, Either, Fiber, TestClock, pipe } from 'effect';
 import * as Event from '../src/Event.js';
 import * as EventBus from '../src/EventBus.js';
 import * as Errors from '../src/Errors.js';
@@ -15,8 +15,6 @@ const NumberEvent = Event.make({
   tag: 'test.number',
   payload: Schema.Number,
 });
-
-const VoidEvent = Event.make({ tag: 'test.void' });
 
 // ── Layer ─────────────────────────────────────────────────────────────
 
@@ -145,8 +143,8 @@ it.layer(TestLayer)('EventBus', (it) => {
 it.effect('publish without EventBus fails with EventBusNotFoundError', () =>
   Effect.gen(function* () {
     const result = yield* Effect.either(EventBus.publish(StringEvent, 'fail'));
-    expect(result._tag).toBe('Left');
-    if (result._tag === 'Left') {
+    expect(Either.isLeft(result)).toBe(true);
+    if (Either.isLeft(result)) {
       expect(result.left).toBeInstanceOf(Errors.EventBusNotFoundError);
     }
   }),
@@ -155,8 +153,8 @@ it.effect('publish without EventBus fails with EventBusNotFoundError', () =>
 it.effect('subscribe without EventBus fails with EventBusNotFoundError', () =>
   Effect.gen(function* () {
     const result = yield* pipe(EventBus.subscribe(StringEvent), Stream.runCollect, Effect.either);
-    expect(result._tag).toBe('Left');
-    if (result._tag === 'Left') {
+    expect(Either.isLeft(result)).toBe(true);
+    if (Either.isLeft(result)) {
       expect(result.left).toBeInstanceOf(Errors.EventBusNotFoundError);
     }
   }),

@@ -2,6 +2,7 @@ import { Effect, Context, PubSub, Stream, pipe, Layer, Option } from 'effect';
 import * as Errors from './Errors.js';
 import * as Event from './Event.js';
 import * as EnvelopeApi from './Envelope.js';
+import * as PayloadApi from './Payload.js';
 
 /**
  * In-memory typed event bus backed by Effect's {@link PubSub}.
@@ -16,8 +17,8 @@ export class EventBus extends Context.Tag('@effect-pantry/events/EventBus')<
   {
     readonly publish: <TEvent extends Event.AnyEvent>(
       event: TEvent,
-      payload: TEvent[typeof Event.MetaTypeId]['inferPayload'],
-    ) => Effect.Effect<boolean>;
+      input: TEvent[typeof Event.MetaTypeId]['input'],
+    ) => Effect.Effect<boolean, Errors.SchemaParseError>;
 
     readonly subscribe: <TEvent extends Event.AnyEvent>(
       event: TEvent,
@@ -25,7 +26,7 @@ export class EventBus extends Context.Tag('@effect-pantry/events/EventBus')<
 
     readonly unsafePublish: <TEvent extends Event.AnyEvent>(
       event: TEvent,
-      payload: TEvent[typeof Event.MetaTypeId]['inferPayload'],
+      input: TEvent[typeof Event.MetaTypeId]['input'],
     ) => boolean;
   }
 >() {}
@@ -52,21 +53,23 @@ const getOrFail = pipe(
 /**
  * Publish an event. Requires the EventBus service in context.
  *
- * Fails with {@link EventBusNotFoundError} if the bus is not provided.
+ * Validates the input through the event's payload schema before publishing.
+ * Fails with {@link EventBusNotFoundError} if the bus is not provided,
+ * or with {@link SchemaParseError} if the input fails schema validation.
  */
 export function publish<TEvent extends Event.AnyEvent>(
   event: TEvent,
-  payload: TEvent[typeof Event.MetaTypeId]['inferPayload'],
-): Effect.Effect<boolean, Errors.EventBusNotFoundError> {
+  input: TEvent[typeof Event.MetaTypeId]['input'],
+): Effect.Effect<boolean, Errors.EventBusNotFoundError | Errors.SchemaParseError> {
   return pipe(
     getOrFail,
-    Effect.andThen((s) => s.publish(event, payload)),
+    Effect.andThen((s) => s.publish(event, input)),
   );
 }
 
 export function subscribe<TEvent extends Event.AnyEvent>(
   event: TEvent,
-): Stream.Stream<EnvelopeApi.Envelope<Event.AnyEvent>, Errors.EventBusNotFoundError> {
+): Stream.Stream<EnvelopeApi.Envelope<TEvent>, Errors.EventBusNotFoundError> {
   return pipe(
     getOrFail,
     Effect.map((s) => s.subscribe(event)),
@@ -84,14 +87,14 @@ export function subscribe<TEvent extends Event.AnyEvent>(
  */
 export const publishOptional: <TEvent extends Event.AnyEvent>(
   event: TEvent,
-  payload: TEvent[typeof Event.MetaTypeId]['inferPayload'],
-) => Effect.Effect<Option.Option<boolean>> = (event, payload) =>
+  input: TEvent[typeof Event.MetaTypeId]['input'],
+) => Effect.Effect<Option.Option<boolean>, Errors.SchemaParseError> = (event, input) =>
   Effect.gen(function* () {
     const eventBus = yield* getOrUndefined;
 
     if (!eventBus) return Option.none();
 
-    const result = yield* eventBus.publish(event, payload);
+    const result = yield* eventBus.publish(event, input);
     return Option.some(result);
   });
 
@@ -115,6 +118,7 @@ export const subscribeOptional: <TEvent extends Event.AnyEvent>(
   });
 
 type MakeOptions = {
+  /** Max number of buffered events. Omit for unbounded (recommended). */
   readonly capacity?: number;
 };
 
@@ -131,8 +135,10 @@ export const make = (options: MakeOptions = {}) =>
       : PubSub.unbounded<EnvelopeApi.Envelope<Event.AnyEvent>>();
 
     return EventBus.of({
-      publish: (event, payload) =>
+      publish: (event, input) =>
         Effect.gen(function* () {
+          const payload = yield* PayloadApi.parse(event.payload, input);
+
           const envelope = EnvelopeApi.make({
             event,
             payload,
@@ -148,7 +154,12 @@ export const make = (options: MakeOptions = {}) =>
               env.event.tag === expectedEvent.tag,
           ),
         ),
-      unsafePublish(event, payload) {
+      unsafePublish(event, input) {
+        const payload = PayloadApi.parseSync<EnvelopeApi.ExtractPayload<typeof event>>(
+          event.payload,
+          input,
+        );
+
         const envelope = EnvelopeApi.make({
           event,
           payload,

@@ -23,13 +23,16 @@ export type MetaTypeId = typeof MetaTypeId;
 /**
  * System-level metadata attached to every {@link Event}.
  *
- * Holds phantom type information (like the inferred payload type) and
+ * Holds phantom type information (inferred input/output types) and
  * any future internal fields the framework needs — things *added by the
  * system*, not the user. User-facing properties like {@link Event.payload}
  * live directly on the {@link Event} interface.
  */
 export interface EventMeta<Payload extends Payload.AnyPayload> {
-  readonly inferPayload: Payload.InferPayload<Payload>;
+  /** Phantom type for the output (decoded) type — what subscribers receive. */
+  readonly output: Payload.InferPayloadOutput<Payload>;
+  /** Phantom type for the input (encoded) type — what publishers provide. */
+  readonly input: Payload.InferPayloadInput<Payload>;
 }
 
 /**
@@ -57,7 +60,7 @@ export type AnyEvent = Event<any, any>;
 /**
  * Runtime type guard: checks whether a value is an {@link Event} instance.
  */
-export const isEvent = (u: unknown): u is Event<any, any> => Predicate.hasProperty(u, TypeId);
+export const isEvent = (u: unknown): u is AnyEvent => Predicate.hasProperty(u, TypeId);
 
 const Proto = { [TypeId]: TypeId };
 
@@ -75,7 +78,10 @@ const Proto = { [TypeId]: TypeId };
  * @param options.tag - Unique string identifier for the event
  * @param options.payload - Schema for the event payload (defaults to `Schema.Void`)
  */
-export const make = <Tag extends string, Payload extends Payload.AnyPayload = typeof Schema.Void>(options: {
+export const make = <
+  Tag extends string,
+  Payload extends Payload.AnyPayload = typeof Schema.Void,
+>(options: {
   readonly tag: Tag;
   readonly payload?: Payload;
 }): Event<Tag, Payload> => {
@@ -85,5 +91,5 @@ export const make = <Tag extends string, Payload extends Payload.AnyPayload = ty
     payload,
     [MetaTypeId]: {} as EventMeta<Payload>,
   };
-  return Object.assign(Object.create(Proto), self)
+  return Object.assign(Object.create(Proto), self);
 };

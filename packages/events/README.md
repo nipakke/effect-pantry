@@ -6,7 +6,7 @@ A type-safe, in-memory event bus for Effect-TS v3. Define events with branded ta
 
 - **Fully type-safe** — payload types are inferred from your schemas; the compiler catches mismatches
 - **Schema-agnostic** — accepts `@effect/schema` or any library implementing the `@standard-schema/spec` interface (Zod, Valibot, ArkType)
-- **Schema is for inference, not validation** — schemas are used solely to derive TypeScript types; no runtime validation is performed
+- **Runtime payload validation** — input is validated through your schema at publish time; invalid payloads produce a `SchemaParseError`
 - **Pluggable bus** — `EventBus` is a `Context.Tag`; the default implementation uses in-memory `PubSub`, but you can swap in your own
 - **Composable** — build custom buses on top of the default one (e.g., record every event, add transforms, bridge to external systems)
 
@@ -176,6 +176,17 @@ const result = yield* Effect.either(
 // Left(EventBusNotFoundError): "EventBus service not provided..."
 ```
 
+When the payload doesn't match the event schema, `publish()` fails with `SchemaParseError`:
+
+```ts
+import { EventBus, SchemaParseError } from "@effect-pantry/events"
+
+const result = yield* Effect.either(
+  EventBus.publish(OrderPlaced, { orderId: 1, amount: "not-a-number" }),
+)
+// Left(SchemaParseError): "Expected number, received string"
+```
+
 #### Optional Access
 
 When the bus is truly optional, use the `Optional` variants — they return `Option` instead of failing:
@@ -199,8 +210,8 @@ Because `EventBus` is just a `Context.Tag`, you can implement your own bus and p
 {
   readonly publish: <TEvent extends Event.AnyEvent>(
     event: TEvent,
-    payload: TEvent[typeof Event.MetaTypeId]['inferPayload'],
-  ) => Effect.Effect<boolean>
+    input: TEvent[typeof Event.MetaTypeId]['input'],
+  ) => Effect.Effect<boolean, Errors.SchemaParseError>
 
   readonly subscribe: <TEvent extends Event.AnyEvent>(
     event: TEvent,
@@ -208,7 +219,7 @@ Because `EventBus` is just a `Context.Tag`, you can implement your own bus and p
 
   readonly unsafePublish: <TEvent extends Event.AnyEvent>(
     event: TEvent,
-    payload: TEvent[typeof Event.MetaTypeId]['inferPayload'],
+    input: TEvent[typeof Event.MetaTypeId]['input'],
   ) => boolean
 }
 ```
@@ -325,6 +336,7 @@ const program = Effect.provide(myProgram, RecordingBusLayer)
 | Export                  | Description                                    |
 | ----------------------- | ---------------------------------------------- |
 | `EventBusNotFoundError` | Thrown when EventBus is not in the context.     |
+| `SchemaParseError`      | Thrown when payload validation fails.           |
 
 ### Symbols
 
@@ -342,7 +354,8 @@ const program = Effect.provide(myProgram, RecordingBusLayer)
 | `Event.EventMeta<Payload>`         | System-level event metadata (inferred payload type, etc.). |
 | `Envelope<TEvent>`                 | Published event with `id`, `ts`, `event`, and `payload`.    |
 | `AnyPayload`                       | `Schema.Schema.Any \| StandardSchemaV1`.                    |
-| `InferPayload<Payload>`            | Extracts the output type from a payload schema.             |
+| `InferPayloadOutput<Payload>`      | Extracts the output (decoded) type from a payload schema.    |
+| `InferPayloadInput<Payload>`       | Extracts the input (encoded) type from a payload schema.     |
 
 ## License
 
