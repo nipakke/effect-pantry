@@ -1,7 +1,6 @@
 {
   "name": "@effect-pantry/events",
   "version": "0.0.1",
-  "private": true,
   "description": "Type-safe in-memory event bus for Effect-TS — branded event definitions with PubSub-backed publish/subscribe",
   "keywords": [
     "effect",
