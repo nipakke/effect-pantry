@@ -53,9 +53,8 @@ jobs:
           cache: true
 
       - run: vp install
-      - run: corepack enable
-      - run: pnpm build
-      - run: pnpm test
+      - run: vp run build
+      - run: vp run test
 
   test-ok:
     name: Tests OK
