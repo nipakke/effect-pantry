@@ -1,5 +1,3 @@
 ## What
 
-## Checklist
-
-- [ ] CI passes
+## Why

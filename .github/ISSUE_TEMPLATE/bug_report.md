@@ -6,6 +6,9 @@ labels: bug
 
 ## What happened
 
-## What should have happened
+## Steps to reproduce
 
-## How to reproduce
+## Environment
+
+- Node:
+- Package version:
