@@ -69,8 +69,8 @@ export const make = (options?: MakeOptions) =>
         pipe(
           validateKey(key, 'key'),
           Effect.andThen(
-            bridgeProgress<FilesSDK.UploadResult, FilesSDK.UploadProgress>(
-              (signal, onProgress) => files.upload(key, body, { ...opts, signal, onProgress }),
+            bridgeProgress<FilesSDK.UploadResult, FilesSDK.UploadProgress>((signal, onProgress) =>
+              files.upload(key, body, { ...opts, signal, onProgress }),
             ),
           ),
         ),
