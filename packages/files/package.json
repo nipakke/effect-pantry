@@ -1,0 +1,63 @@
+{
+  "name": "@effect-pantry/files",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Effect-native file storage — wraps files-sdk as typed Effect functions with scope-managed lifecycle",
+  "keywords": [
+    "effect",
+    "files-sdk",
+    "file-storage",
+    "s3",
+    "r2"
+  ],
+  "homepage": "https://github.com/nipakke/effect-pantry/tree/main/packages/files#readme",
+  "bugs": {
+    "url": "https://github.com/nipakke/effect-pantry/issues"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nipakke/effect-pantry.git",
+    "directory": "packages/files"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "clean": "rimraf dist",
+    "build": "pnpm clean && tsgo",
+    "test": "vitest run",
+    "check": "vp check",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json"
+  },
+  "dependencies": {
+    "@effect/platform": "catalog:",
+    "effect": "catalog:effect3",
+    "files-sdk": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/vitest": "catalog:effect3",
+    "@tooling/tsconfig": "workspace:*",
+    "@types/node": "catalog:",
+    "@typescript/native-preview": "catalog:",
+    "@vitest/ui": "catalog:",
+    "rimraf": "catalog:",
+    "vite-plus": "catalog:",
+    "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}
