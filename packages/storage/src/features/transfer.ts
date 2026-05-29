@@ -1,11 +1,8 @@
-import * as FilesSDK from "files-sdk";
-import { bridgeProgress } from "../internal.js";
+import * as FilesSDK from 'files-sdk';
+import { bridgeProgress } from '../internal.js';
 
 /** Options for {@link transfer}, with `signal` and `onProgress` managed internally. */
-export type TransferOptions = Omit<
-  FilesSDK.TransferOptions,
-  "signal" | "onProgress"
->;
+export type TransferOptions = Omit<FilesSDK.TransferOptions, 'signal' | 'onProgress'>;
 
 /**
  * Cross-provider migration: walks every object the `source` exposes and
@@ -49,12 +46,7 @@ export type TransferOptions = Omit<
  *   {@link FilesSDK.TransferResult} when executed, and `progress` is a
  *   stream of {@link FilesSDK.TransferProgress} events.
  */
-export const transfer = (
-  source: FilesSDK.Files,
-  dest: FilesSDK.Files,
-  opts?: TransferOptions,
-) =>
-  bridgeProgress<FilesSDK.TransferResult, FilesSDK.TransferProgress>(
-    (signal, onProgress) =>
-      FilesSDK.transfer(source, dest, { ...opts, signal, onProgress }),
+export const transfer = (source: FilesSDK.Files, dest: FilesSDK.Files, opts?: TransferOptions) =>
+  bridgeProgress<FilesSDK.TransferResult, FilesSDK.TransferProgress>((signal, onProgress) =>
+    FilesSDK.transfer(source, dest, { ...opts, signal, onProgress }),
   );

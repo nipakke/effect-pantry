@@ -5,10 +5,10 @@
   "description": "Effect-native storage — wraps files-sdk as typed Effect functions with scope-managed lifecycle",
   "keywords": [
     "effect",
-    "files-sdk",
     "file-storage",
-    "s3",
-    "r2"
+    "files-sdk",
+    "r2",
+    "s3"
   ],
   "homepage": "https://github.com/nipakke/effect-pantry/tree/main/packages/storage#readme",
   "bugs": {
@@ -45,9 +45,6 @@
   "dependencies": {
     "effect": "catalog:effect3"
   },
-  "peerDependencies": {
-    "files-sdk": "^1.6.0"
-  },
   "devDependencies": {
     "@effect/vitest": "catalog:effect3",
     "@tooling/tsconfig": "workspace:*",
@@ -57,6 +54,9 @@
     "rimraf": "catalog:",
     "vite-plus": "catalog:",
     "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "files-sdk": "^1.6.0"
   },
   "engines": {
     "node": ">=22"

@@ -1,9 +1,9 @@
-import { it, expect } from "@effect/vitest";
-import { Cause, Effect, Layer, Stream } from "effect";
-import { type Adapter, Files, FilesError, TransferProgress } from "files-sdk";
-import { memory } from "files-sdk/memory";
-import * as Transfer from "../src/features/transfer.js";
-import { StorageNotFoundError } from "../src/index.js";
+import { it, expect } from '@effect/vitest';
+import { Cause, Effect, Layer, Stream } from 'effect';
+import { type Adapter, Files, FilesError, TransferProgress } from 'files-sdk';
+import { memory } from 'files-sdk/memory';
+import * as Transfer from '../src/features/transfer.js';
+import { StorageNotFoundError } from '../src/index.js';
 
 // ── Layer ─────────────────────────────────────────────────────────────
 
@@ -12,21 +12,15 @@ const TestLayer = Layer.empty;
 // ── Helpers ───────────────────────────────────────────────────────────
 
 /** Execute a transfer and return the resolved TransferResult, ignoring progress. */
-const runTransfer = (
-  src: Files,
-  dst: Files,
-  opts?: Transfer.TransferOptions,
-) =>
-  Transfer.transfer(src, dst, opts).pipe(
-    Effect.flatMap(({ result }) => result),
-  );
+const runTransfer = (src: Files, dst: Files, opts?: Transfer.TransferOptions) =>
+  Transfer.transfer(src, dst, opts).pipe(Effect.flatMap(({ result }) => result));
 
 // ═════════════════════════════════════════════════════════════════════
 // Transfer — empty source
 // ═════════════════════════════════════════════════════════════════════
 
-it.layer(TestLayer)("Transfer", (it) => {
-  it.scoped("empty source → empty result", () =>
+it.layer(TestLayer)('Transfer', (it) => {
+  it.scoped('empty source → empty result', () =>
     Effect.gen(function* () {
       const src = new Files({ adapter: memory() });
       const dst = new Files({ adapter: memory() });
@@ -43,14 +37,14 @@ it.layer(TestLayer)("Transfer", (it) => {
   // Transfer — files with progress
   // ═══════════════════════════════════════════════════════════════════
 
-  it.scoped("transfers files and reports progress events", () =>
+  it.scoped('transfers files and reports progress events', () =>
     Effect.gen(function* () {
       const src = new Files({
         adapter: memory({
           initial: {
-            "a.txt": "hello a",
-            "b.txt": "hello b",
-            "c.txt": "hello c",
+            'a.txt': 'hello a',
+            'b.txt': 'hello b',
+            'c.txt': 'hello c',
           },
         }),
       });
@@ -74,9 +68,9 @@ it.layer(TestLayer)("Transfer", (it) => {
       const last = events[events.length - 1]!;
       expect(last.done).toBe(last.total);
       expect(transferResult.transferred).toHaveLength(3);
-      expect(transferResult.transferred).toContain("a.txt");
-      expect(transferResult.transferred).toContain("b.txt");
-      expect(transferResult.transferred).toContain("c.txt");
+      expect(transferResult.transferred).toContain('a.txt');
+      expect(transferResult.transferred).toContain('b.txt');
+      expect(transferResult.transferred).toContain('c.txt');
     }),
   );
 
@@ -84,11 +78,11 @@ it.layer(TestLayer)("Transfer", (it) => {
   // Transfer — progress event shape
   // ═══════════════════════════════════════════════════════════════════
 
-  it.scoped("progress events have correct shape", () =>
+  it.scoped('progress events have correct shape', () =>
     Effect.gen(function* () {
       const src = new Files({
         adapter: memory({
-          initial: { "x.txt": "content" },
+          initial: { 'x.txt': 'content' },
         }),
       });
       const dst = new Files({ adapter: memory() });
@@ -108,8 +102,8 @@ it.layer(TestLayer)("Transfer", (it) => {
       const p = events[0]!;
       expect(p.done).toBe(1);
       expect(p.total).toBe(1);
-      expect(p.key).toBe("x.txt");
-      expect(["transferred", "skipped"]).toContain(p.status);
+      expect(p.key).toBe('x.txt');
+      expect(['transferred', 'skipped']).toContain(p.status);
     }),
   );
 
@@ -117,13 +111,13 @@ it.layer(TestLayer)("Transfer", (it) => {
   // Transfer — resolves with TransferResult on completion
   // ═══════════════════════════════════════════════════════════════════
 
-  it.scoped("resolves with TransferResult on completion", () =>
+  it.scoped('resolves with TransferResult on completion', () =>
     Effect.gen(function* () {
       const src = new Files({
         adapter: memory({
           initial: {
-            "data/1.json": "{}",
-            "data/2.json": "{}",
+            'data/1.json': '{}',
+            'data/2.json': '{}',
           },
         }),
       });
@@ -141,17 +135,17 @@ it.layer(TestLayer)("Transfer", (it) => {
   // Transfer — files land in the destination
   // ═══════════════════════════════════════════════════════════════════
 
-  it.scoped("transferred files land in the destination adapter", () =>
+  it.scoped('transferred files land in the destination adapter', () =>
     Effect.gen(function* () {
       const src = new Files({
-        adapter: memory({ initial: { "report.pdf": "PDF data" } }),
+        adapter: memory({ initial: { 'report.pdf': 'PDF data' } }),
       });
       const dst = new Files({ adapter: memory() });
 
       yield* runTransfer(src, dst);
 
       // Directly inspect the destination's memory store
-      const entry = dst.adapter.raw.get("report.pdf");
+      const entry = dst.adapter.raw.get('report.pdf');
       expect(entry).toBeDefined();
       expect(entry?.contentType).toBeDefined();
     }),
@@ -164,22 +158,22 @@ it.layer(TestLayer)("Transfer", (it) => {
   it.scoped('overwrite: false skips existing keys', () =>
     Effect.gen(function* () {
       const src = new Files({
-        adapter: memory({ initial: { "k.txt": "new data" } }),
+        adapter: memory({ initial: { 'k.txt': 'new data' } }),
       });
       const dst = new Files({
-        adapter: memory({ initial: { "k.txt": "old data" } }),
+        adapter: memory({ initial: { 'k.txt': 'old data' } }),
       });
 
       const result = yield* runTransfer(src, dst, { overwrite: false });
 
       expect(result.skipped).toBeDefined();
       expect(result.skipped).toHaveLength(1);
-      expect(result.skipped).toContain("k.txt");
+      expect(result.skipped).toContain('k.txt');
       expect(result.transferred).toHaveLength(0);
 
       // Old data should still be there
-      const oldFile = yield* Effect.promise(() => dst.download("k.txt"));
-      expect(yield* Effect.promise(() => oldFile.text())).toBe("old data");
+      const oldFile = yield* Effect.promise(() => dst.download('k.txt'));
+      expect(yield* Effect.promise(() => oldFile.text())).toBe('old data');
     }),
   );
 
@@ -187,24 +181,24 @@ it.layer(TestLayer)("Transfer", (it) => {
   // Transfer — error mapping
   // ═══════════════════════════════════════════════════════════════════
 
-  it.scoped("maps FilesError to StorageError on transfer failure", () =>
+  it.scoped('maps FilesError to StorageError on transfer failure', () =>
     Effect.gen(function* () {
       // Source list explodes — should surface as tagged StorageError
       const badAdapter = {
-        name: "explosive-src",
+        name: 'explosive-src',
         raw: null,
         move: undefined as unknown,
         reportsUploadProgress: false,
         supportsRange: false,
-        upload: () => Promise.reject(new Error("no")),
-        download: () => Promise.reject(new Error("no")),
-        head: () => Promise.reject(new Error("no")),
-        exists: () => Promise.reject(new Error("no")),
-        delete: () => Promise.reject(new Error("no")),
-        copy: () => Promise.reject(new Error("no")),
-        list: () => Promise.reject(new FilesError("NotFound", "bucket gone")),
-        url: () => Promise.reject(new Error("no")),
-        signedUploadUrl: () => Promise.reject(new Error("no")),
+        upload: () => Promise.reject(new Error('no')),
+        download: () => Promise.reject(new Error('no')),
+        head: () => Promise.reject(new Error('no')),
+        exists: () => Promise.reject(new Error('no')),
+        delete: () => Promise.reject(new Error('no')),
+        copy: () => Promise.reject(new Error('no')),
+        list: () => Promise.reject(new FilesError('NotFound', 'bucket gone')),
+        url: () => Promise.reject(new Error('no')),
+        signedUploadUrl: () => Promise.reject(new Error('no')),
       };
       const src = new Files({ adapter: badAdapter as unknown as Adapter });
       const dst = new Files({ adapter: memory() });
@@ -214,11 +208,11 @@ it.layer(TestLayer)("Transfer", (it) => {
       const outcome = yield* Effect.exit(result);
 
       // The deferred result should fail with a StorageError
-      expect(outcome._tag).toBe("Failure");
-      if (outcome._tag === "Failure") {
+      expect(outcome._tag).toBe('Failure');
+      if (outcome._tag === 'Failure') {
         const failure = Cause.failureOption(outcome.cause);
-        expect(failure._tag).toBe("Some");
-        if (failure._tag === "Some") {
+        expect(failure._tag).toBe('Some');
+        if (failure._tag === 'Some') {
           expect(failure.value).toBeInstanceOf(StorageNotFoundError);
         }
       }

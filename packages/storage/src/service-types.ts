@@ -1,13 +1,79 @@
-import * as FilesSDK from "files-sdk";
-import { Context, Effect, Stream } from "effect";
-import type { StorageError } from "./errors.js";
-import type { HookEventMap, HookName } from "./hooks.js";
+import * as FilesSDK from 'files-sdk';
+import { Effect, Stream } from 'effect';
+import type { StorageError } from './errors.js';
+import type { HookEventMap, HookName } from './hooks.js';
 
 /** Options for {@link Storage.upload}, with `signal` and `onProgress` managed internally. */
-export type UploadOptions = Omit<
-  FilesSDK.UploadOptions,
-  "signal" | "onProgress"
->;
+export type UploadOptions = Omit<FilesSDK.UploadOptions, 'signal' | 'onProgress'>;
+
+/**
+ * A key-bound handle to a single storage object.
+ *
+ * Returned by {@link StorageInterface.file} — every method operates on the
+ * pre-bound key so callers don't need to pass it on each call. Key
+ * validation happens eagerly at construction; all I/O defers to the
+ * underlying {@link StorageInterface} methods.
+ *
+ * @example
+ * ```ts
+ * const avatar = svc.file("avatars/abc.png");
+ * yield* avatar.upload(body, { contentType: "image/png" });
+ * if (yield* avatar.exists()) {
+ *   const meta = yield* avatar.head();
+ * }
+ * ```
+ */
+export interface FileHandle {
+  /** The key this handle is bound to. */
+  readonly key: string;
+
+  readonly upload: (
+    body: FilesSDK.Body,
+    opts?: UploadOptions,
+  ) => Effect.Effect<
+    {
+      result: Effect.Effect<FilesSDK.UploadResult, StorageError>;
+      progress: Stream.Stream<FilesSDK.UploadProgress>;
+    },
+    never
+  >;
+
+  readonly download: (
+    opts?: FilesSDK.DownloadOptions,
+  ) => Effect.Effect<FilesSDK.StoredFile, StorageError>;
+
+  readonly head: (
+    opts?: FilesSDK.OperationOptions,
+  ) => Effect.Effect<FilesSDK.StoredFile, StorageError>;
+
+  readonly exists: (opts?: FilesSDK.OperationOptions) => Effect.Effect<boolean, StorageError>;
+
+  readonly delete: (opts?: FilesSDK.OperationOptions) => Effect.Effect<void, StorageError>;
+
+  readonly url: (opts?: FilesSDK.UrlOptions) => Effect.Effect<string, StorageError>;
+
+  readonly signedUploadUrl: (
+    opts: FilesSDK.SignUploadOptions,
+  ) => Effect.Effect<FilesSDK.SignedUpload, StorageError>;
+
+  /**
+   * Copy the handle's object to a new key. The handle is the source.
+   * Shortcut for `Storage.copy(handle.key, destKey, opts)`.
+   */
+  readonly copyTo: (
+    destKey: string,
+    opts?: FilesSDK.OperationOptions,
+  ) => Effect.Effect<void, StorageError>;
+
+  /**
+   * Copy from a source key into the handle's key. The handle is the destination.
+   * Shortcut for `Storage.copy(srcKey, handle.key, opts)`.
+   */
+  readonly copyFrom: (
+    srcKey: string,
+    opts?: FilesSDK.OperationOptions,
+  ) => Effect.Effect<void, StorageError>;
+}
 
 /**
  * Options passed to {@link Storage.make} to configure the underlying
@@ -17,10 +83,7 @@ export type UploadOptions = Omit<
  * {@link StorageAdapter} context tag and hooks are wired internally to
  * the PubSub event stream.
  */
-export type MakeOptions = Omit<
-  FilesSDK.FilesOptions<FilesSDK.Adapter>,
-  "adapter" | "hooks"
->;
+export type MakeOptions = Omit<FilesSDK.FilesOptions<FilesSDK.Adapter>, 'adapter' | 'hooks'>;
 
 /**
  * Type interface for the Storage service — separated from the
@@ -108,6 +171,22 @@ export interface StorageInterface {
   ) => Effect.Effect<FilesSDK.SignedUpload, StorageError>;
 
   /**
+   * Create a {@link FileHandle} bound to a single key.
+   *
+   * The key is validated eagerly — an empty key throws synchronously.
+   * Every method on the handle delegates to the corresponding
+   * {@link StorageInterface} method, so adapters implement nothing extra.
+   *
+   * @example
+   * ```ts
+   * const avatar = svc.file("avatars/abc.png");
+   * yield* avatar.upload(body, { contentType: "image/png" });
+   * yield* avatar.copyTo("avatars/abc.bak.png");
+   * ```
+   */
+  readonly file: (key: string) => FileHandle;
+
+  /**
    * Subscribe to constructor hook events as an Effect {@link Stream}.
    *
    * Events are emitted from an unbounded internal {@link PubSub} — every
@@ -132,7 +211,5 @@ export interface StorageInterface {
    * );
    * ```
    */
-  readonly hookStream: <N extends HookName>(
-    name: N,
-  ) => Stream.Stream<HookEventMap[N], never>;
+  readonly hookStream: <N extends HookName>(name: N) => Stream.Stream<HookEventMap[N], never>;
 }

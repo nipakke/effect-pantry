@@ -1,5 +1,5 @@
-import { Effect, Queue, Stream } from "effect";
-import { toStorageError, type StorageError } from "./errors.js";
+import { Effect, Queue, Stream } from 'effect';
+import { toStorageError, type StorageError } from './errors.js';
 
 /** @internal */
 export const wrapSDKCall = <A>(fn: (signal: AbortSignal) => Promise<A>) =>
@@ -10,10 +10,8 @@ export const wrapSDKCall = <A>(fn: (signal: AbortSignal) => Promise<A>) =>
  * Validates that a key is a non-empty string. Returns an effect that dies
  * with a descriptive message when validation fails.
  */
-export const validateKey = (key: string, label = "key") =>
-  key.trim().length > 0
-    ? Effect.void
-    : Effect.dieMessage(`${label} must be a non-empty string`);
+export const validateKey = (key: string, label = 'key') =>
+  key.trim().length > 0 ? Effect.void : Effect.dieMessage(`${label} must be a non-empty string`);
 
 /** @internal
  *
@@ -40,10 +38,7 @@ export const validateKey = (key: string, label = "key") =>
  */
 export const bridgeProgress = <A, P>(
   fn: (signal: AbortSignal, onProgress: (progress: P) => void) => Promise<A>,
-): Effect.Effect<
-  { result: Effect.Effect<A, StorageError>; progress: Stream.Stream<P> },
-  never
-> =>
+): Effect.Effect<{ result: Effect.Effect<A, StorageError>; progress: Stream.Stream<P> }, never> =>
   Effect.gen(function* () {
     const queue = yield* Queue.unbounded<P>();
 

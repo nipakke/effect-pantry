@@ -1,12 +1,12 @@
-import { Data } from "effect";
-import * as FilesSDK from "files-sdk";
+import { Data } from 'effect';
+import * as FilesSDK from 'files-sdk';
 
 /**
  * The requested key, bucket, or container does not exist.
  *
  * @param cause - The original underlying error from the storage provider.
  */
-export class StorageNotFoundError extends Data.TaggedError("StorageNotFoundError")<{
+export class StorageNotFoundError extends Data.TaggedError('StorageNotFoundError')<{
   readonly message: string;
   readonly cause: unknown;
 }> {}
@@ -16,7 +16,7 @@ export class StorageNotFoundError extends Data.TaggedError("StorageNotFoundError
  *
  * @param cause - The original underlying error from the storage provider.
  */
-export class StorageUnauthorizedError extends Data.TaggedError("StorageUnauthorizedError")<{
+export class StorageUnauthorizedError extends Data.TaggedError('StorageUnauthorizedError')<{
   readonly message: string;
   readonly cause: unknown;
 }> {}
@@ -26,7 +26,7 @@ export class StorageUnauthorizedError extends Data.TaggedError("StorageUnauthori
  *
  * @param cause - The original underlying error from the storage provider.
  */
-export class StorageConflictError extends Data.TaggedError("StorageConflictError")<{
+export class StorageConflictError extends Data.TaggedError('StorageConflictError')<{
   readonly message: string;
   readonly cause: unknown;
 }> {}
@@ -36,7 +36,7 @@ export class StorageConflictError extends Data.TaggedError("StorageConflictError
  *
  * @param cause - The original underlying error from the storage provider.
  */
-export class StorageProviderError extends Data.TaggedError("StorageProviderError")<{
+export class StorageProviderError extends Data.TaggedError('StorageProviderError')<{
   readonly message: string;
   readonly cause: unknown;
   readonly aborted: boolean;
@@ -58,11 +58,11 @@ export const toStorageError = (error: unknown): StorageError => {
     const message = error.message;
     const cause = error.cause;
     switch (error.code) {
-      case "NotFound":
+      case 'NotFound':
         return new StorageNotFoundError({ message, cause });
-      case "Unauthorized":
+      case 'Unauthorized':
         return new StorageUnauthorizedError({ message, cause });
-      case "Conflict":
+      case 'Conflict':
         return new StorageConflictError({ message, cause });
       default:
         // files-sdk v1.6 has exactly four codes ("NotFound", "Unauthorized",
