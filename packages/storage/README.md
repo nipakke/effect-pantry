@@ -2,25 +2,6 @@
 
 **Effect-native object storage** — wraps [files-sdk](https://files-sdk.dev) as typed Effect functions. Swap backends by swapping adapters — the API stays the same.
 
-```ts
-import { memory } from "files-sdk/memory"
-import { Storage, StorageAdapter } from "@effect-pantry/storage"
-import { Effect, Layer } from "effect"
-
-const layer = Storage.layer().pipe(
-  Layer.provide(Layer.succeed(StorageAdapter, memory())),
-)
-
-const program = Effect.gen(function* () {
-  const s = yield* Storage.Storage
-  const { result } = yield* s.upload("hello.txt", "Hello, world!")
-  const { key, size, etag } = yield* result
-  return { key, size, etag }
-})
-
-Effect.runPromise(Effect.provide(program, layer))
-```
-
 ## Installation
 
 ```bash
@@ -119,7 +100,7 @@ const s = yield* Storage.make().pipe(
 
 | Method | Signature | Returns |
 |--------|-----------|---------|
-| `upload(key, body, opts?)` | `Effect<{ result, progress }, never>` | Deferred result + progress stream |
+| `upload(key, body, opts?)` | `Effect<{ result, progress }, never>` | Returns `{ result: Effect<UploadResult, StorageError>, progress: Stream<UploadProgress> }`. Consume progress concurrently, then `yield*` the result. |
 | `download(key, opts?)` | `Effect<StoredFile, StorageError>` | File with lazy body accessors |
 | `head(key, opts?)` | `Effect<StoredFile, StorageError>` | Metadata without the body |
 | `exists(key, opts?)` | `Effect<boolean, StorageError>` | Existence check |
@@ -128,8 +109,41 @@ const s = yield* Storage.make().pipe(
 | `move(from, to, opts?)` | `Effect<void, StorageError>` | Rename / relocate |
 | `list(opts?)` | `Effect<ListResult, StorageError>` | Cursor-paginated listing |
 | `url(key, opts?)` | `Effect<string, StorageError>` | Public or signed download URL |
+| `file(key)` | `FileHandle` | Key-bound handle for ergonomic single-key ops |
 | `signedUploadUrl(key, opts)` | `Effect<SignedUpload, StorageError>` | Presigned upload URL |
-| `hookStream(name)` | `Stream<HookEventMap[N], never>` | Observable hook events |
+| `hookStream(name)` | `Stream<HookEventMap[N]>` | Observable hook events |
+
+### `FileHandle`
+
+A key-bound storage handle. Every method operates on a pre-bound key.
+
+```ts
+const avatar = s.file("avatars/abc.png")
+
+// Upload
+yield* avatar.upload(body, { contentType: "image/png" })
+
+// Check existence
+if (yield* avatar.exists()) {
+  const meta = yield* avatar.head()
+}
+
+// Copy / move
+yield* avatar.copyTo("avatars/abc.bak.png")
+yield* avatar.copyFrom("legacy/abc.png")
+```
+
+| Method | Equivalent |
+|--------|-----------|
+| `upload(body, opts?)` | `s.upload(key, body, opts?)` |
+| `download(opts?)` | `s.download(key, opts?)` |
+| `head(opts?)` | `s.head(key, opts?)` |
+| `exists(opts?)` | `s.exists(key, opts?)` |
+| `delete(opts?)` | `s.delete(key, opts?)` |
+| `url(opts?)` | `s.url(key, opts?)` |
+| `signedUploadUrl(opts)` | `s.signedUploadUrl(key, opts)` |
+| `copyTo(destKey, opts?)` | `s.copy(key, destKey, opts?)` |
+| `copyFrom(srcKey, opts?)` | `s.copy(srcKey, key, opts?)` |
 
 ### Errors
 
@@ -155,6 +169,8 @@ yield* s.download("missing.txt").pipe(
 )
 ```
 
+> Use `toStorageError(error)` to manually map unknown errors into typed `StorageError` values when working outside the `Storage` service.
+
 ### Hooks
 
 Observe SDK events as Effect streams:
@@ -175,7 +191,7 @@ yield* s.hookStream("onError").pipe(
 
 ### `transfer(source, dest, opts?)`
 
-Cross-provider migration using `FilesSDK.Files` instances. → [Full example](./examples/04-cross-provider-transfer.md)
+Cross-provider migration using `FilesSDK.Files` instances. → [Full example](./examples/04-cross-provider-transfer.ts)
 
 ```ts
 import { transfer } from "@effect-pantry/storage"
@@ -192,11 +208,11 @@ const { transferred, skipped, errors } = yield* result
 
 ## Examples
 
-- [Basic usage](./examples/01-basic-usage.md) — CRUD with the memory adapter
-- [S3 adapter](./examples/02-s3-adapter.md) — Real S3/R2 configuration
-- [Hooks & monitoring](./examples/03-hooks-and-monitoring.md) — Logging, metrics, alerting
-- [Cross-provider transfer](./examples/04-cross-provider-transfer.md) — S3 → R2 migration with progress
-- [Streams & progress](./examples/05-streams-and-progress.md) — Upload/download progress, cancellation
+- [Basic usage](./examples/01-basic-usage.ts) — Full CRUD with the memory adapter
+- [S3 adapter](./examples/02-s3-adapter.ts) — Real S3/R2 configuration patterns
+- [Hooks & monitoring](./examples/03-hooks-and-monitoring.ts) — Logging, metrics, alerting
+- [Cross-provider transfer](./examples/04-cross-provider-transfer.ts) — S3 → R2 migration with progress
+- [Streams & progress](./examples/05-streams-and-progress.ts) — Upload/download progress, cancellation
 
 ## License
 

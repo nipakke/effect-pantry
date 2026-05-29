@@ -52,6 +52,14 @@ it.layer(TestLayer)('FileHandle', (it) => {
     }),
   );
 
+  it.scoped('file() throws synchronously on a whitespace-only key', () =>
+    Effect.gen(function* () {
+      const svc = yield* Storage;
+      expect(() => svc.file('   ')).toThrow();
+      expect(() => svc.file('\t\n')).toThrow();
+    }),
+  );
+
   // ── Upload / download roundtrip ───────────────────────────────────
 
   it.scoped('upload → download roundtrip via handle', () =>

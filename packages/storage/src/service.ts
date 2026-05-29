@@ -1,5 +1,5 @@
 import * as FilesSDK from 'files-sdk';
-import { Context, Effect, Layer, PubSub, Stream } from 'effect';
+import { Context, Effect, Layer, pipe, PubSub, Stream } from 'effect';
 import { StorageAdapter } from './adapter.js';
 import type { HookEvent, HookEventMap, HookName } from './hooks.js';
 import { bridgeProgress, validateKey, wrapSDKCall } from './internal.js';
@@ -49,7 +49,7 @@ export const make = (options?: MakeOptions) =>
 
     const offer = (event: HookEvent): void => {
       const ok = pubsub.unsafeOffer(event);
-      if (!ok && process.env.NODE_ENV === 'development') {
+      if (!ok) {
         console.warn('[Storage] hook event dropped: PubSub not accepting');
       }
     };
@@ -66,67 +66,70 @@ export const make = (options?: MakeOptions) =>
 
     const svc: StorageInterface = {
       upload: (key, body, opts) =>
-        Effect.gen(function* () {
-          yield* validateKey(key, 'key');
-          return yield* bridgeProgress<FilesSDK.UploadResult, FilesSDK.UploadProgress>(
-            (signal, onProgress) => files.upload(key, body, { ...opts, signal, onProgress }),
-          );
-        }),
+        pipe(
+          validateKey(key, 'key'),
+          Effect.andThen(
+            bridgeProgress<FilesSDK.UploadResult, FilesSDK.UploadProgress>(
+              (signal, onProgress) => files.upload(key, body, { ...opts, signal, onProgress }),
+            ),
+          ),
+        ),
 
       download: (key, opts) =>
-        Effect.gen(function* () {
-          yield* validateKey(key, 'key');
-          return yield* wrapSDKCall((signal) => files.download(key, { ...opts, signal }));
-        }),
+        pipe(
+          validateKey(key, 'key'),
+          Effect.andThen(wrapSDKCall((signal) => files.download(key, { ...opts, signal }))),
+        ),
 
       head: (key, opts) =>
-        Effect.gen(function* () {
-          yield* validateKey(key, 'key');
-          return yield* wrapSDKCall((signal) => files.head(key, { ...opts, signal }));
-        }),
+        pipe(
+          validateKey(key, 'key'),
+          Effect.andThen(wrapSDKCall((signal) => files.head(key, { ...opts, signal }))),
+        ),
 
       exists: (key, opts) =>
-        Effect.gen(function* () {
-          yield* validateKey(key, 'key');
-          return yield* wrapSDKCall((signal) => files.exists(key, { ...opts, signal }));
-        }),
+        pipe(
+          validateKey(key, 'key'),
+          Effect.andThen(wrapSDKCall((signal) => files.exists(key, { ...opts, signal }))),
+        ),
 
       delete: (key, opts) =>
-        Effect.gen(function* () {
-          yield* validateKey(key, 'key');
-          return yield* wrapSDKCall((signal) => files.delete(key, { ...opts, signal }));
-        }),
+        pipe(
+          validateKey(key, 'key'),
+          Effect.andThen(wrapSDKCall((signal) => files.delete(key, { ...opts, signal }))),
+        ),
 
       copy: (from, to, opts) =>
-        Effect.gen(function* () {
-          yield* validateKey(from, 'from');
-          yield* validateKey(to, 'to');
-          return yield* wrapSDKCall((signal) => files.copy(from, to, { ...opts, signal }));
-        }),
+        pipe(
+          validateKey(from, 'from'),
+          Effect.andThen(validateKey(to, 'to')),
+          Effect.andThen(wrapSDKCall((signal) => files.copy(from, to, { ...opts, signal }))),
+        ),
 
       move: (from, to, opts) =>
-        Effect.gen(function* () {
-          yield* validateKey(from, 'from');
-          yield* validateKey(to, 'to');
-          return yield* wrapSDKCall((signal) => files.move(from, to, { ...opts, signal }));
-        }),
+        pipe(
+          validateKey(from, 'from'),
+          Effect.andThen(validateKey(to, 'to')),
+          Effect.andThen(wrapSDKCall((signal) => files.move(from, to, { ...opts, signal }))),
+        ),
 
       list: (opts) => wrapSDKCall((signal) => files.list({ ...opts, signal })),
 
       url: (key, opts) =>
-        Effect.gen(function* () {
-          yield* validateKey(key, 'key');
-          return yield* wrapSDKCall((signal) => files.url(key, { ...opts, signal }));
-        }),
+        pipe(
+          validateKey(key, 'key'),
+          Effect.andThen(wrapSDKCall((signal) => files.url(key, { ...opts, signal }))),
+        ),
 
       signedUploadUrl: (key, opts) =>
-        Effect.gen(function* () {
-          yield* validateKey(key, 'key');
-          return yield* wrapSDKCall((signal) => files.signedUploadUrl(key, { ...opts, signal }));
-        }),
+        pipe(
+          validateKey(key, 'key'),
+          Effect.andThen(wrapSDKCall((signal) => files.signedUploadUrl(key, { ...opts, signal }))),
+        ),
 
       hookStream: <N extends HookName>(name: N): Stream.Stream<HookEventMap[N], never> =>
-        Stream.fromPubSub(pubsub).pipe(
+        pipe(
+          Stream.fromPubSub(pubsub),
           Stream.filter((e) => e._tag === name),
           Stream.map((e) => e.event),
         ) as Stream.Stream<HookEventMap[N], never>,

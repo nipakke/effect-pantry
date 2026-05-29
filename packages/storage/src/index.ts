@@ -9,8 +9,8 @@
  */
 
 export * as Storage from './service.js';
-export type { FileHandle, MakeOptions, UploadOptions } from './service-types.js';
 export * as StorageAdapter from './adapter.js';
+export type { FileHandle, MakeOptions, UploadOptions } from './service-types.js';
 export { transfer } from './features/transfer.js';
 export type { TransferOptions } from './features/transfer.js';
 

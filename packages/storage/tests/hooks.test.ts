@@ -110,4 +110,30 @@ it.layer(TestLayer)('hookStream', (it) => {
       expect(event.to).toBe('copy-dst.txt');
     }),
   );
+
+  // ── onRetry ──────────────────────────────────────────────────────
+
+  it.scoped('hookStream("onRetry") creates a stream without error', () =>
+    Effect.gen(function* () {
+      const svc = yield* Storage;
+      const stream = svc.hookStream('onRetry');
+      // Verify the hook name is accepted and the stream composes
+      // without type errors (even though the memory adapter never
+      // emits retry events).
+      expect(stream).toBeDefined();
+    }),
+  );
+
+  it.scoped.skip('onRetry fires on provider retry (requires retrying adapter)', () =>
+    Effect.gen(function* () {
+      // TODO: Replace the memory adapter with a custom adapter that
+      // fails on the first attempt and succeeds on retry, configured
+      // with `retries > 0`, to properly exercise the onRetry hook
+      // event path.
+      const svc = yield* Storage;
+      const fiber = yield* captureFirst(svc.hookStream('onRetry'));
+      const chunk = yield* Fiber.join(fiber);
+      expect(Chunk.size(chunk)).toBeGreaterThan(0);
+    }),
+  );
 });
