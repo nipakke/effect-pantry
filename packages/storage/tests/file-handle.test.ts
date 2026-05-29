@@ -9,7 +9,7 @@
  */
 
 import { it, expect } from '@effect/vitest';
-import { Effect, Fiber, Layer, Stream } from 'effect';
+import { Context, Effect, Fiber, Layer, Stream } from 'effect';
 import { memory } from 'files-sdk/memory';
 import { Storage, layer } from '../src/service.js';
 import { StorageAdapter } from '../src/adapter.js';
@@ -24,7 +24,7 @@ const TestLayer = layer().pipe(Layer.provide(Layer.succeed(StorageAdapter, memor
 const readText = (file: { text(): Promise<string> }) => Effect.promise(() => file.text());
 
 const runUpload = (
-  svc: Effect.Effect.Success<typeof Storage>,
+  svc: Context.Tag.Service<typeof Storage>,
   key: string,
   body: string,
   opts?: UploadOptions,
@@ -42,21 +42,6 @@ it.layer(TestLayer)('FileHandle', (it) => {
       const svc = yield* Storage;
       const handle = svc.file('pics/avatar.png');
       expect(handle.key).toBe('pics/avatar.png');
-    }),
-  );
-
-  it.scoped('file() throws synchronously on an empty key', () =>
-    Effect.gen(function* () {
-      const svc = yield* Storage;
-      expect(() => svc.file('')).toThrow();
-    }),
-  );
-
-  it.scoped('file() throws synchronously on a whitespace-only key', () =>
-    Effect.gen(function* () {
-      const svc = yield* Storage;
-      expect(() => svc.file('   ')).toThrow();
-      expect(() => svc.file('\t\n')).toThrow();
     }),
   );
 

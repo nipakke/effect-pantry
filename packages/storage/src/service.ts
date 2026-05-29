@@ -2,7 +2,7 @@ import * as FilesSDK from 'files-sdk';
 import { Context, Effect, Layer, pipe, PubSub, Stream } from 'effect';
 import { StorageAdapter } from './adapter.js';
 import type { HookEvent, HookEventMap, HookName } from './hooks.js';
-import { bridgeProgress, validateKey, wrapSDKCall } from './internal.js';
+import { bridgeProgress, wrapSDKCall } from './internal.js';
 import type { FileHandle, MakeOptions, StorageInterface } from './service-types.js';
 
 /**
@@ -44,6 +44,10 @@ export class Storage extends Context.Tag('@effect-pantry/storage/Storage')<
  */
 export const make = (options?: MakeOptions) =>
   Effect.gen(function* () {
+    yield* Effect.logWarning(
+      '@effect-pantry/storage is in early development — APIs may change. Not recommended for production yet.',
+    );
+
     const adapter = yield* StorageAdapter;
     const pubsub = yield* PubSub.unbounded<HookEvent>();
 
@@ -66,66 +70,28 @@ export const make = (options?: MakeOptions) =>
 
     const svc: StorageInterface = {
       upload: (key, body, opts) =>
-        pipe(
-          validateKey(key, 'key'),
-          Effect.andThen(
-            bridgeProgress<FilesSDK.UploadResult, FilesSDK.UploadProgress>((signal, onProgress) =>
-              files.upload(key, body, { ...opts, signal, onProgress }),
-            ),
-          ),
+        bridgeProgress<FilesSDK.UploadResult, FilesSDK.UploadProgress>((signal, onProgress) =>
+          files.upload(key, body, { ...opts, signal, onProgress }),
         ),
 
-      download: (key, opts) =>
-        pipe(
-          validateKey(key, 'key'),
-          Effect.andThen(wrapSDKCall((signal) => files.download(key, { ...opts, signal }))),
-        ),
+      download: (key, opts) => wrapSDKCall((signal) => files.download(key, { ...opts, signal })),
 
-      head: (key, opts) =>
-        pipe(
-          validateKey(key, 'key'),
-          Effect.andThen(wrapSDKCall((signal) => files.head(key, { ...opts, signal }))),
-        ),
+      head: (key, opts) => wrapSDKCall((signal) => files.head(key, { ...opts, signal })),
 
-      exists: (key, opts) =>
-        pipe(
-          validateKey(key, 'key'),
-          Effect.andThen(wrapSDKCall((signal) => files.exists(key, { ...opts, signal }))),
-        ),
+      exists: (key, opts) => wrapSDKCall((signal) => files.exists(key, { ...opts, signal })),
 
-      delete: (key, opts) =>
-        pipe(
-          validateKey(key, 'key'),
-          Effect.andThen(wrapSDKCall((signal) => files.delete(key, { ...opts, signal }))),
-        ),
+      delete: (key, opts) => wrapSDKCall((signal) => files.delete(key, { ...opts, signal })),
 
-      copy: (from, to, opts) =>
-        pipe(
-          validateKey(from, 'from'),
-          Effect.andThen(validateKey(to, 'to')),
-          Effect.andThen(wrapSDKCall((signal) => files.copy(from, to, { ...opts, signal }))),
-        ),
+      copy: (from, to, opts) => wrapSDKCall((signal) => files.copy(from, to, { ...opts, signal })),
 
-      move: (from, to, opts) =>
-        pipe(
-          validateKey(from, 'from'),
-          Effect.andThen(validateKey(to, 'to')),
-          Effect.andThen(wrapSDKCall((signal) => files.move(from, to, { ...opts, signal }))),
-        ),
+      move: (from, to, opts) => wrapSDKCall((signal) => files.move(from, to, { ...opts, signal })),
 
       list: (opts) => wrapSDKCall((signal) => files.list({ ...opts, signal })),
 
-      url: (key, opts) =>
-        pipe(
-          validateKey(key, 'key'),
-          Effect.andThen(wrapSDKCall((signal) => files.url(key, { ...opts, signal }))),
-        ),
+      url: (key, opts) => wrapSDKCall((signal) => files.url(key, { ...opts, signal })),
 
       signedUploadUrl: (key, opts) =>
-        pipe(
-          validateKey(key, 'key'),
-          Effect.andThen(wrapSDKCall((signal) => files.signedUploadUrl(key, { ...opts, signal }))),
-        ),
+        wrapSDKCall((signal) => files.signedUploadUrl(key, { ...opts, signal })),
 
       hookStream: <N extends HookName>(name: N): Stream.Stream<HookEventMap[N], never> =>
         pipe(
@@ -134,23 +100,18 @@ export const make = (options?: MakeOptions) =>
           Stream.map((e) => e.event),
         ) as Stream.Stream<HookEventMap[N], never>,
 
-      file: (key): FileHandle => {
-        if (key.trim().length === 0) {
-          throw new Error('key must be a non-empty string');
-        }
-        return {
-          key,
-          upload: (body, opts) => svc.upload(key, body, opts),
-          download: (opts) => svc.download(key, opts),
-          head: (opts) => svc.head(key, opts),
-          exists: (opts) => svc.exists(key, opts),
-          delete: (opts) => svc.delete(key, opts),
-          url: (opts) => svc.url(key, opts),
-          signedUploadUrl: (opts) => svc.signedUploadUrl(key, opts),
-          copyTo: (destKey, opts) => svc.copy(key, destKey, opts),
-          copyFrom: (srcKey, opts) => svc.copy(srcKey, key, opts),
-        };
-      },
+      file: (key): FileHandle => ({
+        key,
+        upload: (body, opts) => svc.upload(key, body, opts),
+        download: (opts) => svc.download(key, opts),
+        head: (opts) => svc.head(key, opts),
+        exists: (opts) => svc.exists(key, opts),
+        delete: (opts) => svc.delete(key, opts),
+        url: (opts) => svc.url(key, opts),
+        signedUploadUrl: (opts) => svc.signedUploadUrl(key, opts),
+        copyTo: (destKey, opts) => svc.copy(key, destKey, opts),
+        copyFrom: (srcKey, opts) => svc.copy(srcKey, key, opts),
+      }),
     };
 
     return Storage.of(svc);

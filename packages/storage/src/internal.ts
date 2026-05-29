@@ -5,14 +5,6 @@ import { toStorageError, type StorageError } from './errors.js';
 export const wrapSDKCall = <A>(fn: (signal: AbortSignal) => Promise<A>) =>
   Effect.tryPromise({ try: fn, catch: toStorageError });
 
-/**
- * @internal
- * Validates that a key is a non-empty string. Returns an effect that dies
- * with a descriptive message when validation fails.
- */
-export const validateKey = (key: string, label = 'key') =>
-  key.trim().length > 0 ? Effect.void : Effect.dieMessage(`${label} must be a non-empty string`);
-
 /** @internal
  *
  * Bridges a callback-style progress operation to an Effect returning both

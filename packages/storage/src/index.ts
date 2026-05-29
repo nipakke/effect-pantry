@@ -5,6 +5,9 @@
  * (memory, fs, S3, R2, Vercel Blob, and 35+ more), with typed errors and
  * automatic cancellation bridging.
  *
+ * **⚠️ Early-stage package** — APIs may change without notice.
+ * Not recommended for production use yet.
+ *
  * @module
  */
 

@@ -1,5 +1,8 @@
 # @effect-pantry/storage
 
+> [!WARNING]
+> **Early-stage package** — APIs may change without notice. Not recommended for production use yet. Feedback and contributions welcome!
+
 **Effect-native object storage** — wraps [files-sdk](https://files-sdk.dev) as typed Effect functions. Swap backends by swapping adapters — the API stays the same.
 
 ## Installation
@@ -26,6 +29,7 @@ const program = Effect.gen(function* () {
 
   // Upload
   const { result } = yield* s.upload("data.json", JSON.stringify({ hello: "world" }))
+  yield* result;
 
   // Download
   const file = yield* s.download("data.json")
