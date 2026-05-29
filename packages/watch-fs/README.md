@@ -1,5 +1,8 @@
 # @effect-pantry/watch-fs
 
+> [!WARNING]
+> **Early-stage package** — APIs may change without notice. Not recommended for production use yet. Feedback and contributions welcome!
+
 **Effect-native file watching** — wraps [chokidar](https://github.com/paulmillr/chokidar) as typed [Effect](https://effect.website) streams with `Scope`-based resource management.
 
 ```ts

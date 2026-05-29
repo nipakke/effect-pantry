@@ -5,6 +5,9 @@
  * typed errors, and dynamic add/unwatch — all backed by a single
  * chokidar watcher.
  *
+ * **⚠️ Early-stage package** — APIs may change without notice.
+ * Not recommended for production use yet.
+ *
  * @module
  */
 
