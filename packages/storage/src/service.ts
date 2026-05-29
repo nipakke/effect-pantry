@@ -123,7 +123,7 @@ export const make = Effect.gen(function* () {
  * @example
  * ```ts
  * import { memory } from "files-sdk/memory";
- * import { Storage, StorageAdapter } from "@effect-pantry/files";
+ * import { Storage, StorageAdapter } from "@effect-pantry/storage";
  *
  * const layer = Storage.layer.pipe(
  *   Layer.provide(Layer.succeed(StorageAdapter, memory({}))),

@@ -1,8 +1,8 @@
 {
-  "name": "@effect-pantry/files",
+  "name": "@effect-pantry/storage",
   "version": "0.0.0",
   "private": true,
-  "description": "Effect-native file storage — wraps files-sdk as typed Effect functions with scope-managed lifecycle",
+  "description": "Effect-native storage — wraps files-sdk as typed Effect functions with scope-managed lifecycle",
   "keywords": [
     "effect",
     "files-sdk",
@@ -10,7 +10,7 @@
     "s3",
     "r2"
   ],
-  "homepage": "https://github.com/nipakke/effect-pantry/tree/main/packages/files#readme",
+  "homepage": "https://github.com/nipakke/effect-pantry/tree/main/packages/storage#readme",
   "bugs": {
     "url": "https://github.com/nipakke/effect-pantry/issues"
   },
@@ -18,7 +18,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/nipakke/effect-pantry.git",
-    "directory": "packages/files"
+    "directory": "packages/storage"
   },
   "files": [
     "dist"

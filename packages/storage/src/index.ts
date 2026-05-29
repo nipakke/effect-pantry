@@ -1,5 +1,5 @@
 /**
- * @effect-pantry/files — Effect-native storage wrapping files-sdk.
+ * @effect-pantry/storage — Effect-native storage wrapping files-sdk.
  *
  * Provides a {@link Storage} context tag backed by any files-sdk adapter
  * (memory, fs, S3, R2, Vercel Blob, and 35+ more), with typed errors and

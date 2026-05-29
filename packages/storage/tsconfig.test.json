@@ -1,0 +1,10 @@
+{
+  "extends": "@tooling/tsconfig/tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist-test",
+    "rootDir": ".",
+    "noUncheckedIndexedAccess": false,
+    "types": ["node"]
+  },
+  "include": ["tests"]
+}
