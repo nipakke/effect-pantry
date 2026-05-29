@@ -1,5 +1,8 @@
 # @effect-pantry/events
 
+> [!WARNING]
+> **Early-stage package** — APIs may change without notice. Not recommended for production use yet. Feedback and contributions welcome!
+
 A type-safe, in-memory event bus for Effect-TS v3. Define events with branded tags and inferred payload types, then publish/subscribe — all within the Effect runtime.
 
 ## Features
