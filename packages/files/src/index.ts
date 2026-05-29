@@ -1,27 +1,22 @@
-import { Files } from "files-sdk";
-import { Context, Effect } from "effect"
-import { fs } from "files-sdk/fs";
-import { memory } from "files-sdk/memory";
-import { Effectify } from "@effect/platform";
+/**
+ * @effect-pantry/files — Effect-native storage wrapping files-sdk.
+ *
+ * Provides a {@link Storage} context tag backed by any files-sdk adapter
+ * (memory, fs, S3, R2, Vercel Blob, and 35+ more), with typed errors and
+ * automatic cancellation bridging.
+ *
+ * @module
+ */
 
+export * as Storage from "./service.js";
+export * as StorageAdapter from "./adapter.js";
+export * as Transfer from "./features/transfer.js";
 
-
-const make = () => {
-  const files = new Files({
-    adapter: memory({})
-  })
-
-  const upload = Effect.promise((signal) => files.upload("", {}, {
-    signal
-  }))
-
-
-  const file = Effect.sync(() => {
-    const f = files.file("")
-
-    return {
-      upload: () => Effect.promise(()=>f.upload(""))
-    }
-  })
-
-}
+export {
+  StorageNotFoundError,
+  StorageUnauthorizedError,
+  StorageConflictError,
+  StorageProviderError,
+  toStorageError,
+} from "./errors.js";
+export type { StorageError } from "./errors.js";
