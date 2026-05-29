@@ -43,8 +43,10 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json"
   },
   "dependencies": {
-    "effect": "catalog:effect3",
-    "files-sdk": "catalog:"
+    "effect": "catalog:effect3"
+  },
+  "peerDependencies": {
+    "files-sdk": "^1.6.0"
   },
   "devDependencies": {
     "@effect/vitest": "catalog:effect3",

@@ -19,7 +19,7 @@ const runUpload = (
 
 // ── Layer ─────────────────────────────────────────────────────────────
 
-const TestLayer = layer.pipe(
+const TestLayer = layer().pipe(
   Layer.provide(Layer.succeed(StorageAdapter, memory())),
 );
 

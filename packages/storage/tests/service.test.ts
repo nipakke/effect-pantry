@@ -12,7 +12,7 @@ import type { UploadOptions } from "../src/service-types.js";
 
 // ── Layer ─────────────────────────────────────────────────────────────
 
-const TestLayer = layer.pipe(
+const TestLayer = layer().pipe(
   Layer.provide(Layer.succeed(StorageAdapter, memory())),
 );
 
@@ -275,7 +275,7 @@ const badAdapter = {
   signedUploadUrl: allThrow,
 } satisfies Adapter;
 
-const BadAdapterLayer = layer.pipe(
+const BadAdapterLayer = layer().pipe(
   Layer.provide(Layer.succeed(StorageAdapter, badAdapter)),
 );
 

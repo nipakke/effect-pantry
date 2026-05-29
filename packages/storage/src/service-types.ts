@@ -10,6 +10,19 @@ export type UploadOptions = Omit<
 >;
 
 /**
+ * Options passed to {@link Storage.make} to configure the underlying
+ * {@link FilesSDK.Files} instance.
+ *
+ * `adapter` and `hooks` are excluded — the adapter comes from the
+ * {@link StorageAdapter} context tag and hooks are wired internally to
+ * the PubSub event stream.
+ */
+export type MakeOptions = Omit<
+  FilesSDK.FilesOptions<FilesSDK.Adapter>,
+  "adapter" | "hooks"
+>;
+
+/**
  * Type interface for the Storage service — separated from the
  * implementation to keep each file focused and under the module-size
  * guideline.

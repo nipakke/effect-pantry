@@ -3,7 +3,7 @@ import { Context, Effect, Layer, PubSub, Stream } from "effect";
 import { StorageAdapter } from "./adapter.js";
 import type { HookEvent, HookEventMap, HookName } from "./hooks.js";
 import { bridgeProgress, validateKey, wrapSDKCall } from "./internal.js";
-import type { StorageInterface } from "./service-types.js";
+import type { MakeOptions, StorageInterface } from "./service-types.js";
 
 /**
  * Effect-native storage service wrapping a `files-sdk` {@link FilesSDK.Files} instance.
@@ -27,12 +27,23 @@ export class Storage extends Context.Tag("@effect-pantry/storage/Storage")<
 /**
  * Create a {@link Storage} service from the adapter found in the Effect context.
  *
+ * Accepts optional {@link MakeOptions} to configure the underlying
+ * {@link FilesSDK.Files} instance (e.g. `prefix`, `timeout`, `retries`).
+ * The `adapter` and `hooks` options are managed internally and cannot be
+ * overridden.
+ *
  * @example
  * ```ts
- * const svc = yield* Storage.make;
+ * const svc = yield* Storage.make();
+ * ```
+ *
+ * @example With options
+ * ```ts
+ * const svc = yield* Storage.make({ prefix: "uploads/", timeout: 30_000 });
  * ```
  */
-export const make = Effect.gen(function* () {
+export const make = (options?: MakeOptions) =>
+  Effect.gen(function* () {
   const adapter = yield* StorageAdapter;
   const pubsub = yield* PubSub.unbounded<HookEvent>();
 
@@ -44,6 +55,7 @@ export const make = Effect.gen(function* () {
   };
 
   const files = new FilesSDK.Files({
+    ...options,
     adapter,
     hooks: {
       onAction: (event) => offer({ _tag: "onAction" as const, event }),
@@ -124,17 +136,28 @@ export const make = Effect.gen(function* () {
 });
 
 /**
- * An {@link Effect.Layer} that requires {@link StorageAdapter} and provides
+ * Create an {@link Effect.Layer} that requires {@link StorageAdapter} and provides
  * {@link Storage}. The consumer supplies the adapter layer.
+ *
+ * Accepts optional {@link MakeOptions} forwarded to
+ * {@link make}.
  *
  * @example
  * ```ts
  * import { memory } from "files-sdk/memory";
  * import { Storage, StorageAdapter } from "@effect-pantry/storage";
  *
- * const layer = Storage.layer.pipe(
+ * const layer = Storage.layer().pipe(
+ *   Layer.provide(Layer.succeed(StorageAdapter, memory())),
+ * );
+ * ```
+ *
+ * @example With options
+ * ```ts
+ * const layer = Storage.layer({ prefix: "app-data/" }).pipe(
  *   Layer.provide(Layer.succeed(StorageAdapter, memory())),
  * );
  * ```
  */
-export const layer = Layer.effect(Storage, make);
+export const layer = (options?: MakeOptions) =>
+  Layer.effect(Storage, make(options));
