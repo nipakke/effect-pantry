@@ -1,6 +1,5 @@
 import * as FilesSDK from "files-sdk";
-import { Effect, Fiber, PubSub, Stream } from "effect";
-import { toStorageError, type StorageError } from "../errors.js";
+import { bridgeProgress } from "../internal.js";
 
 /** Options for {@link transfer}, with `signal` and `onProgress` managed internally. */
 export type TransferOptions = Omit<
@@ -12,68 +11,50 @@ export type TransferOptions = Omit<
  * Cross-provider migration: walks every object the `source` exposes and
  * streams each one straight to `dest`, whatever the backends are.
  *
- * The transfer starts **eagerly** — the underlying fiber is forked immediately
- * and runs independently of the progress stream. The progress stream is optional:
- * if no consumer pulls from it, the transfer still runs to completion.
- *
- * Progress events are published via a `PubSub.sliding(16)`, meaning slow
- * consumers see only the latest event; old events are dropped. The PubSub
- * shuts down when the transfer completes or fails, which ends the progress
- * stream gracefully.
- *
- * The `done` effect resolves with a {@link FilesSDK.TransferResult} on success
- * or fails with a {@link StorageError} if any error occurs.
- *
- * Both arguments are full {@link FilesSDK.Files} instances, not raw adapters,
- * so each leg honors its own `prefix`, retries, timeouts, and hooks.
- *
- * @returns A record with:
- *  - `progress`: a {@link Stream} of progress events (starts emitting only when pulled)
- *  - `done`: an {@link Effect} that resolves with the final transfer result or fails with a {@link StorageError}
+ * Returns an `{ result, progress }` pair where `result` is a **deferred
+ * Effect** — the transfer does not start until you `yield*` it, and
+ * `progress` is a {@link Stream} of {@link FilesSDK.TransferProgress}
+ * events emitted while the transfer runs. Consume the stream concurrently
+ * with the result:
  *
  * @example
  * ```ts
  * import { s3 } from "files-sdk/s3";
  * import { r2 } from "files-sdk/r2";
  * import * as FilesSDK from "files-sdk";
+ * import { transfer } from "@effect-pantry/storage";
  *
  * const from = new FilesSDK.Files({ adapter: s3({ bucket: "old" }) });
  * const to   = new FilesSDK.Files({ adapter: r2({ bucket: "new", ... }) });
  *
- * const { progress, done } = yield* Transfer.transfer(from, to, {
- *   prefix: "uploads/",
- * });
+ * // With progress — fork the stream consumer before awaiting the result
+ * const { result, progress } = yield* transfer(from, to, { prefix: "uploads/" });
+ * yield* Stream.runForEach(progress, (p) =>
+ *   Effect.log(`${p.status} ${p.key} (${p.done}/${p.total})`)
+ * ).pipe(Effect.forkScoped);
+ * const { transferred, skipped, errors } = yield* result;
  *
- * // Stream progress events (optional — transfer is already running)
- * yield* progress.pipe(Stream.runForEach(p => console.log(p.done, p.key)));
- *
- * // Await completion
- * const result = yield* done;
+ * // Without progress — just yield the result
+ * const { transferred, skipped, errors } = yield* transfer(from, to).pipe(
+ *   Effect.flatMap(({ result }) => result)
+ * );
  * ```
+ *
+ * Both arguments are full {@link FilesSDK.Files} instances, not raw
+ * adapters, so each leg honors its own `prefix`, retries, timeouts, and
+ * hooks.
+ *
+ * @returns An {@link Effect} resolving to `{ result, progress }` where
+ *   `result` is a deferred effect that yields a
+ *   {@link FilesSDK.TransferResult} when executed, and `progress` is a
+ *   stream of {@link FilesSDK.TransferProgress} events.
  */
 export const transfer = (
   source: FilesSDK.Files,
   dest: FilesSDK.Files,
   opts?: TransferOptions,
 ) =>
-  Effect.gen(function* () {
-    const pubsub = yield* PubSub.sliding<FilesSDK.TransferProgress>(16);
-
-    const fiber = yield* Effect.forkScoped(
-      Effect.tryPromise({
-        try: (signal) => {
-          return FilesSDK.transfer(source, dest, {
-            ...opts,
-            signal: signal,
-            onProgress: (p) => pubsub.unsafeOffer(p),
-          });
-        },
-        catch: toStorageError,
-      }).pipe(Effect.ensuring(pubsub.shutdown)),
-    );
-
-    return {
-      progress: Stream.fromPubSub(pubsub),
-      done: Fiber.join(fiber),
-    };
-  });
+  bridgeProgress<FilesSDK.TransferResult, FilesSDK.TransferProgress>(
+    (signal, onProgress) =>
+      FilesSDK.transfer(source, dest, { ...opts, signal, onProgress }),
+  );

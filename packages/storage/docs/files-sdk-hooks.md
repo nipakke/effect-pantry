@@ -92,12 +92,25 @@ hooks: {
 
 Per-call upload callback (not a constructor hook). Fire-and-forget like hooks.
 
+> **@effect-pantry/storage note:** The `Storage.upload` wrapper converts this callback to an
+> Effect `Stream` — `onProgress` is handled internally and never exposed in the options.
+> Callers receive `{ result, progress }` where `progress` is a
+> `Stream<UploadProgress>` consumed concurrently with the result.
+
 ```ts
 await files.upload("big.zip", stream, {
   onProgress({ loaded, total }) {
     const pct = total ? Math.round((loaded / total) * 100) : null;
   },
 });
+```
+
+**Using `@effect-pantry/storage` instead:**
+
+```ts
+const { result, progress } = yield* svc.upload("big.zip", stream);
+yield* Stream.runForEach(progress, (p) => Effect.log(p)).pipe(Effect.forkScoped);
+const uploadResult = yield* result;
 ```
 
 | Property | Type | Description |

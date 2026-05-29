@@ -118,6 +118,10 @@ Bypasses: prefix scoping, normalized errors, hooks, retries, timeouts, cancellat
 
 Cross-provider migration: walks every object under a prefix from one `Files` instance to another.
 
+> **@effect-pantry/storage note:** The `transfer` wrapper in `@effect-pantry/storage`
+> manages `onProgress` internally and returns `{ result, progress }` where `progress` is
+> an Effect `Stream<TransferProgress>`. `onProgress` is never part of the options type.
+
 ```ts
 import { Files, transfer } from "files-sdk";
 const from = new Files({ adapter: s3({ bucket: "old" }) });
@@ -130,6 +134,16 @@ const { transferred, skipped, errors } = await transfer(from, to, {
   concurrency: 16,
   onProgress: ({ done, key, status }) => {},
 });
+```
+
+**Using `@effect-pantry/storage` instead:**
+
+```ts
+const { result, progress } = yield* transfer(from, to, { prefix: "uploads/" });
+yield* Stream.runForEach(progress, (p) =>
+  Effect.log(`${p.status} ${p.key} (${p.done}/${p.total})`)
+).pipe(Effect.forkScoped);
+const { transferred, skipped, errors } = yield* result;
 ```
 
 - Each leg honors its own instance's prefix, retries, timeouts, hooks

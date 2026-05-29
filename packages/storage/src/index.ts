@@ -9,6 +9,7 @@
  */
 
 export * as Storage from "./service.js";
+export type { UploadOptions } from "./service-types.js";
 export * as StorageAdapter from "./adapter.js";
 export { transfer } from "./features/transfer.js";
 export type { TransferOptions } from "./features/transfer.js";
@@ -21,3 +22,5 @@ export {
   toStorageError,
 } from "./errors.js";
 export type { StorageError } from "./errors.js";
+
+export type { HookEvent, HookEventMap, HookName } from "./hooks.js";

@@ -1,9 +1,9 @@
 import { it, expect } from "@effect/vitest";
-import { Cause, Effect, Fiber, Layer, Stream } from "effect";
+import { Cause, Effect, Layer, Stream } from "effect";
 import { type Adapter, Files, FilesError, TransferProgress } from "files-sdk";
 import { memory } from "files-sdk/memory";
 import * as Transfer from "../src/features/transfer.js";
-import { StorageNotFoundError, StorageError } from "../src/index.js";
+import { StorageNotFoundError } from "../src/index.js";
 
 // ── Layer ─────────────────────────────────────────────────────────────
 
@@ -11,29 +11,28 @@ const TestLayer = Layer.empty;
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
-/** Collect all events from a progress stream. */
-const collectProgress = (
-  stream: Stream.Stream<TransferProgress, StorageError, never>,
-): Effect.Effect<Array<TransferProgress>, StorageError> =>
-  stream.pipe(Stream.runCollect, Effect.map((c) => Array.from(c)))
+/** Execute a transfer and return the resolved TransferResult, ignoring progress. */
+const runTransfer = (
+  src: Files,
+  dst: Files,
+  opts?: Transfer.TransferOptions,
+) =>
+  Transfer.transfer(src, dst, opts).pipe(
+    Effect.flatMap(({ result }) => result),
+  );
 
 // ═════════════════════════════════════════════════════════════════════
 // Transfer — empty source
 // ═════════════════════════════════════════════════════════════════════
 
 it.layer(TestLayer)("Transfer", (it) => {
-  it.scoped("empty source → empty result (no progress events)", () =>
+  it.scoped("empty source → empty result", () =>
     Effect.gen(function* () {
       const src = new Files({ adapter: memory() });
       const dst = new Files({ adapter: memory() });
 
-      const { progress, done } = yield* Transfer.transfer(src, dst);
+      const result = yield* runTransfer(src, dst);
 
-      const eventsFiber = yield* Effect.fork(collectProgress(progress));
-      const result = yield* done;
-      const events = yield* Fiber.join(eventsFiber);
-
-      expect(events).toHaveLength(0);
       expect(result.transferred).toHaveLength(0);
       expect(result.skipped).toBeUndefined();
       expect(result.errors).toBeUndefined();
@@ -57,21 +56,27 @@ it.layer(TestLayer)("Transfer", (it) => {
       });
       const dst = new Files({ adapter: memory() });
 
-      const { progress, done } = yield* Transfer.transfer(src, dst);
+      const { result, progress } = yield* Transfer.transfer(src, dst);
+      const events: TransferProgress[] = [];
 
-      const eventsFiber = yield* Effect.fork(collectProgress(progress));
-      const result = yield* done;
-      const events = yield* Fiber.join(eventsFiber);
+      // Fork the progress collector before starting the transfer
+      yield* Stream.runForEach(progress, (p) =>
+        Effect.sync(() => {
+          events.push(p);
+        }),
+      ).pipe(Effect.forkScoped);
+
+      const transferResult = yield* result;
 
       expect(events.length).toBeGreaterThanOrEqual(1);
 
       // Last event should report done === total
       const last = events[events.length - 1]!;
       expect(last.done).toBe(last.total);
-      expect(result.transferred).toHaveLength(3);
-      expect(result.transferred).toContain("a.txt");
-      expect(result.transferred).toContain("b.txt");
-      expect(result.transferred).toContain("c.txt");
+      expect(transferResult.transferred).toHaveLength(3);
+      expect(transferResult.transferred).toContain("a.txt");
+      expect(transferResult.transferred).toContain("b.txt");
+      expect(transferResult.transferred).toContain("c.txt");
     }),
   );
 
@@ -88,11 +93,16 @@ it.layer(TestLayer)("Transfer", (it) => {
       });
       const dst = new Files({ adapter: memory() });
 
-      const { progress, done } = yield* Transfer.transfer(src, dst);
+      const { result, progress } = yield* Transfer.transfer(src, dst);
+      const events: TransferProgress[] = [];
 
-      const eventsFiber = yield* Effect.fork(collectProgress(progress));
-      yield* done;
-      const events = yield* Fiber.join(eventsFiber);
+      yield* Stream.runForEach(progress, (p) =>
+        Effect.sync(() => {
+          events.push(p);
+        }),
+      ).pipe(Effect.forkScoped);
+
+      yield* result;
 
       expect(events.length).toBe(1);
       const p = events[0]!;
@@ -104,10 +114,10 @@ it.layer(TestLayer)("Transfer", (it) => {
   );
 
   // ═══════════════════════════════════════════════════════════════════
-  // Transfer — deferred resolves with result
+  // Transfer — resolves with TransferResult on completion
   // ═══════════════════════════════════════════════════════════════════
 
-  it.scoped("deferred resolves with TransferResult on completion", () =>
+  it.scoped("resolves with TransferResult on completion", () =>
     Effect.gen(function* () {
       const src = new Files({
         adapter: memory({
@@ -119,11 +129,7 @@ it.layer(TestLayer)("Transfer", (it) => {
       });
       const dst = new Files({ adapter: memory() });
 
-      const { progress, done } = yield* Transfer.transfer(src, dst);
-
-      const eventsFiber = yield* Effect.fork(collectProgress(progress));
-      const result = yield* done;
-      yield* Fiber.join(eventsFiber);
+      const result = yield* runTransfer(src, dst);
 
       expect(result.transferred).toHaveLength(2);
       expect(result.skipped).toBeUndefined();
@@ -142,10 +148,7 @@ it.layer(TestLayer)("Transfer", (it) => {
       });
       const dst = new Files({ adapter: memory() });
 
-      const { progress, done } = yield* Transfer.transfer(src, dst);
-      const eventsFiber = yield* Effect.fork(collectProgress(progress));
-      yield* done;
-      yield* Fiber.join(eventsFiber);
+      yield* runTransfer(src, dst);
 
       // Directly inspect the destination's memory store
       const entry = dst.adapter.raw.get("report.pdf");
@@ -167,13 +170,7 @@ it.layer(TestLayer)("Transfer", (it) => {
         adapter: memory({ initial: { "k.txt": "old data" } }),
       });
 
-      const { progress, done } = yield* Transfer.transfer(src, dst, {
-        overwrite: false,
-      });
-
-      const eventsFiber = yield* Effect.fork(collectProgress(progress));
-      const result = yield* done;
-      yield* Fiber.join(eventsFiber);
+      const result = yield* runTransfer(src, dst, { overwrite: false });
 
       expect(result.skipped).toBeDefined();
       expect(result.skipped).toHaveLength(1);
@@ -212,13 +209,11 @@ it.layer(TestLayer)("Transfer", (it) => {
       const src = new Files({ adapter: badAdapter as unknown as Adapter });
       const dst = new Files({ adapter: memory() });
 
-      const { progress, done } = yield* Transfer.transfer(src, dst);
+      // Transfer setup succeeds (outer effect), error is in the deferred result
+      const { result } = yield* Transfer.transfer(src, dst);
+      const outcome = yield* Effect.exit(result);
 
-      const eventsFiber = yield* Effect.fork(collectProgress(progress));
-      const outcome = yield* Effect.exit(done);
-      yield* Fiber.interrupt(eventsFiber);
-
-      // The deferred should fail with a StorageError
+      // The deferred result should fail with a StorageError
       expect(outcome._tag).toBe("Failure");
       if (outcome._tag === "Failure") {
         const failure = Cause.failureOption(outcome.cause);

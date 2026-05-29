@@ -65,6 +65,9 @@ export const toStorageError = (error: unknown): StorageError => {
       case "Conflict":
         return new StorageConflictError({ message, cause });
       default:
+        // files-sdk v1.6 has exactly four codes ("NotFound", "Unauthorized",
+        // "Conflict", "Provider"). If this branch triggers, the SDK added a new
+        // error code — file an issue to add a dedicated tagged error.
         return new StorageProviderError({ message, cause, aborted: error.aborted });
     }
   }

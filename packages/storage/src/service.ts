@@ -1,8 +1,9 @@
 import * as FilesSDK from "files-sdk";
-import { Context, Effect, Layer } from "effect";
+import { Context, Effect, Layer, PubSub, Stream } from "effect";
 import { StorageAdapter } from "./adapter.js";
-import { type StorageError } from "./errors.js";
-import { wrapSDKCall } from "./internal.js";
+import type { HookEvent, HookEventMap, HookName } from "./hooks.js";
+import { bridgeProgress, validateKey, wrapSDKCall } from "./internal.js";
+import type { StorageInterface } from "./service-types.js";
 
 /**
  * Effect-native storage service wrapping a `files-sdk` {@link FilesSDK.Files} instance.
@@ -20,78 +21,8 @@ import { wrapSDKCall } from "./internal.js";
  */
 export class Storage extends Context.Tag("@effect-pantry/storage/Storage")<
   Storage,
-  {
-    readonly upload: (
-      /** Object key (path) to store the object at. */
-      key: string,
-      /** Body content to upload (string, Buffer, ReadableStream, Blob, File, etc.). */
-      body: FilesSDK.Body,
-      /** Optional upload configuration (contentType, multipart threshold, etc.). */
-      opts?: FilesSDK.UploadOptions,
-    ) => Effect.Effect<FilesSDK.UploadResult, StorageError>;
-
-    readonly download: (
-      /** Object key (path) to retrieve. */
-      key: string,
-      /** Optional download configuration (range, accept header, stream mode, etc.). */
-      opts?: FilesSDK.DownloadOptions,
-    ) => Effect.Effect<FilesSDK.StoredFile, StorageError>;
-
-    readonly head: (
-      /** Object key (path) to inspect without downloading. */
-      key: string,
-      opts?: FilesSDK.OperationOptions,
-    ) => Effect.Effect<FilesSDK.StoredFile, StorageError>;
-
-    readonly exists: (
-      /** Object key (path) to check for existence. */
-      key: string,
-      opts?: FilesSDK.OperationOptions,
-    ) => Effect.Effect<boolean, StorageError>;
-
-    readonly delete: (
-      /** Object key (path) to permanently remove. */
-      key: string,
-      opts?: FilesSDK.OperationOptions,
-    ) => Effect.Effect<void, StorageError>;
-
-    readonly copy: (
-      /** Source key (path) to copy from. */
-      from: string,
-      /** Destination key (path) to copy to. */
-      to: string,
-      opts?: FilesSDK.OperationOptions,
-    ) => Effect.Effect<void, StorageError>;
-
-    readonly move: (
-      /** Source key (path) to move from. */
-      from: string,
-      /** Destination key (path) to move to. */
-      to: string,
-      opts?: FilesSDK.OperationOptions,
-    ) => Effect.Effect<void, StorageError>;
-
-    readonly list: (
-      /** Optional listing configuration (prefix, maxKeys, cursor, recursive, etc.). */
-      opts?: FilesSDK.ListOptions,
-    ) => Effect.Effect<FilesSDK.ListResult, StorageError>;
-
-    readonly url: (
-      /** Object key (path) to generate a public/download URL for. */
-      key: string,
-      /** Optional URL configuration (expiresIn, etc.). */
-      opts?: FilesSDK.UrlOptions,
-    ) => Effect.Effect<string, StorageError>;
-
-    readonly signedUploadUrl: (
-      /** Object key (path) to generate a signed upload URL for. */
-      key: string,
-      /** Required by the underlying SDK — `expiresIn` is always required;
-       *  `contentType` and `maxSize` may also be needed depending on the adapter. */
-      opts: FilesSDK.SignUploadOptions,
-    ) => Effect.Effect<FilesSDK.SignedUpload, StorageError>;
-  }
->() { }
+  StorageInterface
+>() {}
 
 /**
  * Create a {@link Storage} service from the adapter found in the Effect context.
@@ -103,40 +34,92 @@ export class Storage extends Context.Tag("@effect-pantry/storage/Storage")<
  */
 export const make = Effect.gen(function* () {
   const adapter = yield* StorageAdapter;
+  const pubsub = yield* PubSub.unbounded<HookEvent>();
+
+  const offer = (event: HookEvent): void => {
+    const ok = pubsub.unsafeOffer(event);
+    if (!ok && process.env.NODE_ENV === "development") {
+      console.warn("[Storage] hook event dropped: PubSub not accepting");
+    }
+  };
+
   const files = new FilesSDK.Files({
     adapter,
+    hooks: {
+      onAction: (event) => offer({ _tag: "onAction" as const, event }),
+      onError: (event) => offer({ _tag: "onError" as const, event }),
+      onRetry: (event) => offer({ _tag: "onRetry" as const, event }),
+    },
   });
 
   return Storage.of({
     upload: (key, body, opts) =>
-      wrapSDKCall((signal) => files.upload(key, body, { ...opts, signal })),
+      Effect.gen(function* () {
+        yield* validateKey(key, "key");
+        return yield* bridgeProgress<FilesSDK.UploadResult, FilesSDK.UploadProgress>(
+          (signal, onProgress) =>
+            files.upload(key, body, { ...opts, signal, onProgress }),
+        );
+      }),
 
     download: (key, opts) =>
-      wrapSDKCall((signal) => files.download(key, { ...opts, signal })),
+      Effect.gen(function* () {
+        yield* validateKey(key, "key");
+        return yield* wrapSDKCall((signal) => files.download(key, { ...opts, signal }));
+      }),
 
     head: (key, opts) =>
-      wrapSDKCall((signal) => files.head(key, { ...opts, signal })),
+      Effect.gen(function* () {
+        yield* validateKey(key, "key");
+        return yield* wrapSDKCall((signal) => files.head(key, { ...opts, signal }));
+      }),
 
     exists: (key, opts) =>
-      wrapSDKCall((signal) => files.exists(key, { ...opts, signal })),
+      Effect.gen(function* () {
+        yield* validateKey(key, "key");
+        return yield* wrapSDKCall((signal) => files.exists(key, { ...opts, signal }));
+      }),
 
     delete: (key, opts) =>
-      wrapSDKCall((signal) => files.delete(key, { ...opts, signal })),
+      Effect.gen(function* () {
+        yield* validateKey(key, "key");
+        return yield* wrapSDKCall((signal) => files.delete(key, { ...opts, signal }));
+      }),
 
     copy: (from, to, opts) =>
-      wrapSDKCall((signal) => files.copy(from, to, { ...opts, signal })),
+      Effect.gen(function* () {
+        yield* validateKey(from, "from");
+        yield* validateKey(to, "to");
+        return yield* wrapSDKCall((signal) => files.copy(from, to, { ...opts, signal }));
+      }),
 
     move: (from, to, opts) =>
-      wrapSDKCall((signal) => files.move(from, to, { ...opts, signal })),
+      Effect.gen(function* () {
+        yield* validateKey(from, "from");
+        yield* validateKey(to, "to");
+        return yield* wrapSDKCall((signal) => files.move(from, to, { ...opts, signal }));
+      }),
 
     list: (opts) =>
       wrapSDKCall((signal) => files.list({ ...opts, signal })),
 
     url: (key, opts) =>
-      wrapSDKCall((signal) => files.url(key, { ...opts, signal })),
+      Effect.gen(function* () {
+        yield* validateKey(key, "key");
+        return yield* wrapSDKCall((signal) => files.url(key, { ...opts, signal }));
+      }),
 
     signedUploadUrl: (key, opts) =>
-      wrapSDKCall((signal) => files.signedUploadUrl(key, { ...opts, signal })),
+      Effect.gen(function* () {
+        yield* validateKey(key, "key");
+        return yield* wrapSDKCall((signal) => files.signedUploadUrl(key, { ...opts, signal }));
+      }),
+
+    hookStream: <N extends HookName>(name: N): Stream.Stream<HookEventMap[N], never> =>
+      Stream.fromPubSub(pubsub).pipe(
+        Stream.filter((e) => e._tag === name),
+        Stream.map((e) => e.event),
+      ) as Stream.Stream<HookEventMap[N], never>,
   });
 });
 
@@ -150,7 +133,7 @@ export const make = Effect.gen(function* () {
  * import { Storage, StorageAdapter } from "@effect-pantry/storage";
  *
  * const layer = Storage.layer.pipe(
- *   Layer.provide(Layer.succeed(StorageAdapter, memory({}))),
+ *   Layer.provide(Layer.succeed(StorageAdapter, memory())),
  * );
  * ```
  */

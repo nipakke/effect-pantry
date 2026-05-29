@@ -42,6 +42,11 @@ _Status_: Known — awaiting upstream fix
 
 ## Insights & Lessons Learned
 
+### Hard Rules
+
+- **Never use inline `import()` type expressions in test or source files** — e.g. `opts?: import("../src/service.js").UploadOptions`. These are brittle: they break silently when types move between files, don't appear in grep/dead-code analysis, and bypass the module resolution that `tsc` and bundlers rely on. Always use a top-level `import type { ... } from "..."` statement instead.
+- **Never use `Context.Tag` as a type annotation for service parameters** — e.g. `svc: Storage` where `Storage` is a `Context.Tag`. The tag class is not the service shape. Always use `Context.Tag.Service<typeof Storage>` for function parameters. TypeScript infers correctly inside `Effect.gen(function* () { const svc = yield* Storage })` but explicit annotations need the service type.
+
 ### What Works Well
 
 - **Scope-based resource management** — The `watch()` function requires `Scope.Scope` and uses `Effect.acquireRelease` to manage the chokidar watcher lifecycle. When the scope closes, chokidar is automatically cleaned up — no manual resource tracking needed.

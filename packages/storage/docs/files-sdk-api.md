@@ -52,6 +52,9 @@ await files.upload("avatars/abc.png", file, {
 
 **Options**: `contentType?`, `cacheControl?`, `metadata?`, `onProgress?`, `multipart?` (boolean | {partSize, concurrency}), `signal?`, `timeout?`, `retries?`
 
+> **@effect-pantry/storage note:** `Storage.upload` omits `onProgress` and `signal` from
+> options — progress is returned as an Effect `Stream` via `{ result, progress }`.
+
 **Returns**: `{ key, size, contentType, etag, lastModified }`
 
 **Bulk form** — `files.upload(items[])` returns `{ uploaded: UploadResult[], errors?: Array<{ key, error }> }`.
