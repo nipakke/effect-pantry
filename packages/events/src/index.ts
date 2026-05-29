@@ -13,7 +13,15 @@
 
 export { isEvent } from './Event.js';
 export type { Event, AnyEvent } from './Event.js';
-export { EventBus, publish, subscribe, publishOptional, subscribeOptional, getOption, layer } from './EventBus.js';
+export {
+  EventBus,
+  publish,
+  subscribe,
+  publishOptional,
+  subscribeOptional,
+  getOption,
+  layer,
+} from './EventBus.js';
 export { isEnvelope } from './Envelope.js';
 export type { Envelope, ExtractPayload, WithoutBrand } from './Envelope.js';
 
