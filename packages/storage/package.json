@@ -1,7 +1,6 @@
 {
   "name": "@effect-pantry/storage",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.0.1",
   "description": "Effect-native storage — wraps files-sdk as typed Effect functions with scope-managed lifecycle",
   "keywords": [
     "effect",
