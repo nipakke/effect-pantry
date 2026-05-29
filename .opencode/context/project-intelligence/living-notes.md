@@ -59,6 +59,7 @@ _Status_: Known — awaiting upstream fix
 
 - **Dual vitest instances with `@effect/vitest` and `vite-plus`** — `@effect/vitest` re-exports vitest's test registration primitives via `import * as V from "vitest"`. When `vp test` runs, it uses `@voidzero-dev/vite-plus-test` (an internal vitest fork) as the runner. Different module singletons → all tests break. Fix: use `vitest run`. Quick diagnosis: if `npx vitest run` passes but `pnpm test` fails, it's this issue.
 - **`Effect.runFork` and `Effect.forkScoped` don't work in `it.scoped` tests** — Fibers created via `runFork` or `forkScoped` never execute in `@effect/vitest`'s scoped test environment. Bridge callbacks to Effect state using `Queue.unsafeOffer` instead.
+  - **Update 2026-05-29**: Verified with `@effect/vitest` v0.29.0 + vitest 3.2.4 — `forkScoped` inside `Effect.gen` called from `it.scoped` works correctly. `Effect.fork` + `Fiber.join` also works. The known issue appears resolved in this version combination. If this breaks on future updates, fall back to `Queue.unsafeOffer` bridging.
 - **Run tests with `vitest run`, not `bun test` or `vp test`** — Only `vitest run` uses the exact vitest instance that `@effect/vitest` registered with.
 
 ## Patterns & Conventions

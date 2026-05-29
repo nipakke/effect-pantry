@@ -43,7 +43,6 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json"
   },
   "dependencies": {
-    "@effect/platform": "catalog:",
     "effect": "catalog:effect3",
     "files-sdk": "catalog:"
   },
@@ -58,6 +57,6 @@
     "vitest": "catalog:"
   },
   "engines": {
-    "node": ">=24"
+    "node": ">=22"
   }
 }

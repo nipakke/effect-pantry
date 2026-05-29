@@ -1,5 +1,5 @@
 import { it, expect } from "@effect/vitest";
-import { Cause, Effect, Layer } from "effect";
+import { Cause, Effect, Fiber, Layer } from "effect";
 import { memory } from "files-sdk/memory";
 import {
   Storage,
@@ -136,10 +136,49 @@ it.layer(TestLayer)("Storage", (it) => {
       expect(failure._tag).toBe("Some");
       if (failure._tag === "Some") {
         // The memory adapter surfaces "not found" as FilesError("Provider"),
-        // which maps to StorageProviderError. Exact mapping is covered in
-        // errors.test.ts — here we just verify errors flow through.
+        // which maps to StorageProviderError. Exact error-code mapping is
+        // exhaustively tested in errors.test.ts — this test only verifies
+        // that errors flow through the service pipeline end-to-end.
         expect(failure.value._tag).toBe("StorageProviderError");
       }
+    }),
+  );
+
+  // ── url ──────────────────────────────────────────────────────────
+
+  it.scoped("url returns a string for an existing key", () =>
+    Effect.gen(function* () {
+      const svc = yield* Storage;
+      yield* svc.upload("url-test.txt", "content");
+      const result = yield* svc.url("url-test.txt");
+      expect(typeof result).toBe("string");
+      expect(result.length).toBeGreaterThan(0);
+    }),
+  );
+
+  // ── signedUploadUrl ──────────────────────────────────────────────
+
+  it.scoped("signedUploadUrl returns a valid SignedUpload shape", () =>
+    Effect.gen(function* () {
+      const svc = yield* Storage;
+      const result = yield* svc.signedUploadUrl("upload-me.txt", {
+        expiresIn: 3600,
+        contentType: "text/plain",
+      });
+      expect(result.url).toBeDefined();
+      expect(typeof result.url).toBe("string");
+    }),
+  );
+
+  // ── Cancellation ─────────────────────────────────────────────────
+
+  it.scoped("upload is cancellable", () =>
+    Effect.gen(function* () {
+      const svc = yield* Storage;
+      const fiber = yield* Effect.fork(svc.upload("cancel-me.txt", "data"));
+      yield* Fiber.interrupt(fiber);
+      const outcome = yield* Effect.exit(Fiber.join(fiber));
+      expect(outcome._tag).toBe("Failure");
     }),
   );
 });

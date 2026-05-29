@@ -3,7 +3,7 @@
   "compilerOptions": {
     "outDir": "dist-test",
     "rootDir": ".",
-    "noUncheckedIndexedAccess": false,
+    "noUncheckedIndexedAccess": true,
     "types": ["node"]
   },
   "include": ["tests"]

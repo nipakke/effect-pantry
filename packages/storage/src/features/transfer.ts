@@ -1,9 +1,9 @@
 import * as FilesSDK from "files-sdk";
-import { Deferred, Effect, Stream } from "effect";
+import { Effect, Fiber, PubSub, Stream } from "effect";
 import { toStorageError, type StorageError } from "../errors.js";
 
 /** Options for {@link transfer}, with `signal` and `onProgress` managed internally. */
-type TransferOptions = Omit<
+export type TransferOptions = Omit<
   FilesSDK.TransferOptions,
   "signal" | "onProgress"
 >;
@@ -12,11 +12,24 @@ type TransferOptions = Omit<
  * Cross-provider migration: walks every object the `source` exposes and
  * streams each one straight to `dest`, whatever the backends are.
  *
- * Returns a {@link Stream} of progress events and a {@link Deferred} that
- * resolves with the final result on completion (or fails on error).
+ * The transfer starts **eagerly** — the underlying fiber is forked immediately
+ * and runs independently of the progress stream. The progress stream is optional:
+ * if no consumer pulls from it, the transfer still runs to completion.
+ *
+ * Progress events are published via a `PubSub.sliding(16)`, meaning slow
+ * consumers see only the latest event; old events are dropped. The PubSub
+ * shuts down when the transfer completes or fails, which ends the progress
+ * stream gracefully.
+ *
+ * The `done` effect resolves with a {@link FilesSDK.TransferResult} on success
+ * or fails with a {@link StorageError} if any error occurs.
  *
  * Both arguments are full {@link FilesSDK.Files} instances, not raw adapters,
  * so each leg honors its own `prefix`, retries, timeouts, and hooks.
+ *
+ * @returns A record with:
+ *  - `progress`: a {@link Stream} of progress events (starts emitting only when pulled)
+ *  - `done`: an {@link Effect} that resolves with the final transfer result or fails with a {@link StorageError}
  *
  * @example
  * ```ts
@@ -31,11 +44,11 @@ type TransferOptions = Omit<
  *   prefix: "uploads/",
  * });
  *
- * // Stream progress events
+ * // Stream progress events (optional — transfer is already running)
  * yield* progress.pipe(Stream.runForEach(p => console.log(p.done, p.key)));
  *
  * // Await completion
- * const result = yield* Effect.flatten(Deferred.await(done));
+ * const result = yield* done;
  * ```
  */
 export const transfer = (
@@ -44,42 +57,23 @@ export const transfer = (
   opts?: TransferOptions,
 ) =>
   Effect.gen(function* () {
-    const deferred = yield* Deferred.make<
-      FilesSDK.TransferResult,
-      StorageError
-    >();
+    const pubsub = yield* PubSub.sliding<FilesSDK.TransferProgress>(16);
 
-    const progress = Stream.asyncPush<
-      FilesSDK.TransferProgress,
-      StorageError
-    >(
-      (emit) =>
-        Effect.acquireRelease(
-          Effect.sync(() => {
-            const controller = new AbortController();
-
-            FilesSDK.transfer(source, dest, {
-              ...opts,
-              signal: controller.signal,
-              onProgress: (p) => emit.single(p),
-            }).then(
-              (result) => {
-                emit.end();
-                Deferred.unsafeDone(deferred, Effect.succeed(result));
-              },
-              (error) => {
-                const e = toStorageError(error);
-                emit.fail(e);
-                Deferred.unsafeDone(deferred, Effect.fail(e));
-              },
-            );
-
-            return controller;
-          }),
-          (controller) => Effect.sync(() => controller.abort()),
-        ),
-      { bufferSize: 16, strategy: "dropping" },
+    const fiber = yield* Effect.forkScoped(
+      Effect.tryPromise({
+        try: (signal) => {
+          return FilesSDK.transfer(source, dest, {
+            ...opts,
+            signal: signal,
+            onProgress: (p) => pubsub.unsafeOffer(p),
+          });
+        },
+        catch: toStorageError,
+      }).pipe(Effect.ensuring(pubsub.shutdown)),
     );
 
-    return { progress, done: deferred };
+    return {
+      progress: Stream.fromPubSub(pubsub),
+      done: Fiber.join(fiber),
+    };
   });

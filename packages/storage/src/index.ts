@@ -10,7 +10,8 @@
 
 export * as Storage from "./service.js";
 export * as StorageAdapter from "./adapter.js";
-export * as Transfer from "./features/transfer.js";
+export { transfer } from "./features/transfer.js";
+export type { TransferOptions } from "./features/transfer.js";
 
 export {
   StorageNotFoundError,

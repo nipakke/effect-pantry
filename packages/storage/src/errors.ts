@@ -3,6 +3,8 @@ import * as FilesSDK from "files-sdk";
 
 /**
  * The requested key, bucket, or container does not exist.
+ *
+ * @param cause - The original underlying error from the storage provider.
  */
 export class StorageNotFoundError extends Data.TaggedError("StorageNotFoundError")<{
   readonly message: string;
@@ -11,6 +13,8 @@ export class StorageNotFoundError extends Data.TaggedError("StorageNotFoundError
 
 /**
  * Credentials are missing, expired, or have insufficient permissions.
+ *
+ * @param cause - The original underlying error from the storage provider.
  */
 export class StorageUnauthorizedError extends Data.TaggedError("StorageUnauthorizedError")<{
   readonly message: string;
@@ -19,6 +23,8 @@ export class StorageUnauthorizedError extends Data.TaggedError("StorageUnauthori
 
 /**
  * A precondition failed (e.g. a conditional write lost a race).
+ *
+ * @param cause - The original underlying error from the storage provider.
  */
 export class StorageConflictError extends Data.TaggedError("StorageConflictError")<{
   readonly message: string;
@@ -27,6 +33,8 @@ export class StorageConflictError extends Data.TaggedError("StorageConflictError
 
 /**
  * A provider-level failure: network, throttling, 5xx, timeout, or cancellation.
+ *
+ * @param cause - The original underlying error from the storage provider.
  */
 export class StorageProviderError extends Data.TaggedError("StorageProviderError")<{
   readonly message: string;
@@ -56,7 +64,7 @@ export const toStorageError = (error: unknown): StorageError => {
         return new StorageUnauthorizedError({ message, cause });
       case "Conflict":
         return new StorageConflictError({ message, cause });
-      case "Provider":
+      default:
         return new StorageProviderError({ message, cause, aborted: error.aborted });
     }
   }

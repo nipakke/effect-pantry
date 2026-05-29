@@ -12,9 +12,6 @@ catalogs:
     '@changesets/cli':
       specifier: ^2.28.0
       version: 2.31.0
-    '@effect/platform':
-      specifier: ^0.96.1
-      version: 0.96.1
     '@standard-schema/spec':
       specifier: ^1.1.0
       version: 1.1.0
@@ -102,7 +99,7 @@ importers:
         version: 0.90.10(effect@3.21.2)
       '@effect/vitest':
         specifier: catalog:effect3
-        version: 0.29.0(effect@3.21.2)(vitest@3.2.4(@types/node@25.8.0)(lightningcss@1.32.0))
+        version: 0.29.0(effect@3.21.2)(vitest@3.2.4(@types/node@25.8.0)(@vitest/ui@0.1.21)(lightningcss@1.32.0))
       '@tooling/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/tsconfig
@@ -122,11 +119,8 @@ importers:
         specifier: 'catalog:'
         version: 3.2.4(@types/node@25.8.0)(@vitest/ui@0.1.21)(lightningcss@1.32.0)
 
-  packages/files:
+  packages/storage:
     dependencies:
-      '@effect/platform':
-        specifier: 'catalog:'
-        version: 0.96.1(effect@3.21.2)
       effect:
         specifier: catalog:effect3
         version: 3.21.2
@@ -136,7 +130,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: catalog:effect3
-        version: 0.29.0(effect@3.21.2)(vitest@3.2.4(@types/node@25.8.0)(lightningcss@1.32.0))
+        version: 0.29.0(effect@3.21.2)(vitest@3.2.4(@types/node@25.8.0)(@vitest/ui@0.1.21)(lightningcss@1.32.0))
       '@tooling/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/tsconfig
@@ -176,7 +170,7 @@ importers:
         version: 0.96.1(@effect/cluster@0.48.16(@effect/platform@0.90.10(effect@3.21.2))(@effect/rpc@0.69.5(@effect/platform@0.90.10(effect@3.21.2))(effect@3.21.2))(@effect/sql@0.44.2(@effect/experimental@0.60.0(@effect/platform@0.90.10(effect@3.21.2))(effect@3.21.2))(@effect/platform@0.90.10(effect@3.21.2))(effect@3.21.2))(@effect/workflow@0.9.6(@effect/platform@0.90.10(effect@3.21.2))(@effect/rpc@0.69.5(@effect/platform@0.90.10(effect@3.21.2))(effect@3.21.2))(effect@3.21.2))(effect@3.21.2))(@effect/platform@0.90.10(effect@3.21.2))(@effect/rpc@0.69.5(@effect/platform@0.90.10(effect@3.21.2))(effect@3.21.2))(@effect/sql@0.44.2(@effect/experimental@0.60.0(@effect/platform@0.90.10(effect@3.21.2))(effect@3.21.2))(@effect/platform@0.90.10(effect@3.21.2))(effect@3.21.2))(effect@3.21.2)
       '@effect/vitest':
         specifier: catalog:effect3
-        version: 0.29.0(effect@3.21.2)(vitest@3.2.4(@types/node@25.8.0)(lightningcss@1.32.0))
+        version: 0.29.0(effect@3.21.2)(vitest@3.2.4(@types/node@25.8.0)(@vitest/ui@0.1.21)(lightningcss@1.32.0))
       '@tooling/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/tsconfig
@@ -319,11 +313,6 @@ packages:
     resolution: {integrity: sha512-QhDPgCaLfIMQKOCoCPQvRUS+Y34iYJ07jdZ/CBAvYFvg/iUBebsmFuHL63RCD/YZH9BuK/kqqLYAA3M0fmUEgg==}
     peerDependencies:
       effect: ^3.17.13
-
-  '@effect/platform@0.96.1':
-    resolution: {integrity: sha512-cjB1QZZYEP8JXCFNGvBLVi0T6YUBQTmOVEUA3SDbiQ6RUO+p6CE3eyD2vMWmrz5nE8yY5QSAuOV9v0boEcUv+A==}
-    peerDependencies:
-      effect: ^3.21.2
 
   '@effect/rpc@0.69.5':
     resolution: {integrity: sha512-LLCZP/aiaW4HeoIaoZuVZpJb/PFCwdJP21b3xP6l+1yoRVw8HlKYyfy/outRCF+BT4ndtY0/utFSeGWC21Qr7w==}
@@ -2761,13 +2750,6 @@ snapshots:
       msgpackr: 1.11.12
       multipasta: 0.2.7
 
-  '@effect/platform@0.96.1(effect@3.21.2)':
-    dependencies:
-      effect: 3.21.2
-      find-my-way-ts: 0.1.6
-      msgpackr: 1.11.12
-      multipasta: 0.2.7
-
   '@effect/rpc@0.69.5(@effect/platform@0.90.10(effect@3.21.2))(effect@3.21.2)':
     dependencies:
       '@effect/platform': 0.90.10(effect@3.21.2)
@@ -2780,7 +2762,7 @@ snapshots:
       effect: 3.21.2
       uuid: 11.1.1
 
-  '@effect/vitest@0.29.0(effect@3.21.2)(vitest@3.2.4(@types/node@25.8.0)(lightningcss@1.32.0))':
+  '@effect/vitest@0.29.0(effect@3.21.2)(vitest@3.2.4(@types/node@25.8.0)(@vitest/ui@0.1.21)(lightningcss@1.32.0))':
     dependencies:
       effect: 3.21.2
       vitest: 3.2.4(@types/node@25.8.0)(@vitest/ui@0.1.21)(lightningcss@1.32.0)
