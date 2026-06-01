@@ -34,7 +34,7 @@ catalog:
   '@changesets/changelog-github': ^0.7.0
   '@types/node': ^25.8.0
   chokidar: ^5.0.0
-  files-sdk: ^1.6.0
+  files-sdk: ^1.7.0
   turbo: ^2.4.0
   typescript: ^6.0.0
   vite-plus: ^0.1.21
