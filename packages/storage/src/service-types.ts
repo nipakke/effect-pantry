@@ -82,6 +82,10 @@ export interface FileHandle {
  * `adapter` and `hooks` are excluded — the adapter comes from the
  * {@link StorageAdapter} context tag and hooks are wired internally to
  * the PubSub event stream.
+ *
+ * In files-sdk 1.8+ you can also pass `readonly`, `receipts`, `plugins`,
+ * `prefix`, `timeout`, and `retries` — they all flow through to the
+ * underlying `Files` constructor.
  */
 export type MakeOptions = Omit<FilesSDK.FilesOptions<FilesSDK.Adapter>, 'adapter' | 'hooks'>;
 
@@ -154,6 +158,35 @@ export interface StorageInterface {
     /** Optional listing configuration (prefix, maxKeys, cursor, recursive, etc.). */
     opts?: FilesSDK.ListOptions,
   ) => Effect.Effect<FilesSDK.ListResult, StorageError>;
+
+  /**
+   * Find objects whose key matches a pattern (glob, regex, substring, or exact).
+   *
+   * Returns a streaming `Effect` that lazily walks every page under the hood
+   * — memory-bounded on large buckets. Supports wildcard globbing by default.
+   *
+   * @example
+   * ```ts
+   * yield* svc.search("avatars/*.png").pipe(
+   *   Stream.runForEach((file) => Effect.log(file.key)),
+   * );
+   * ```
+   *
+   * @param pattern - Glob string or RegExp to match keys against.
+   * @param opts - Search configuration (match mode, prefix, maxResults, caseInsensitive).
+   */
+  readonly search: (
+    pattern: string | RegExp,
+    opts?: FilesSDK.SearchOptions,
+  ) => Stream.Stream<FilesSDK.StoredFile, StorageError>;
+
+  /**
+   * Query what the underlying adapter can do up front.
+   *
+   * Branch on capabilities — `rangeRead`, `signedUrl.supported`,
+   * `multipart`, etc. — instead of waiting for a throw at call time.
+   */
+  readonly capabilities: FilesSDK.AdapterCapabilities;
 
   readonly url: (
     /** Object key (path) to generate a public/download URL for. */

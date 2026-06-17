@@ -42,10 +42,22 @@ export class StorageProviderError extends Data.TaggedError('StorageProviderError
   readonly aborted: boolean;
 }> {}
 
+/**
+ * A write operation (`upload`, `delete`, `copy`, `move`, `signedUploadUrl`)
+ * was attempted on a read-only Files instance (files-sdk 1.8+).
+ *
+ * @param cause - The original underlying error from the storage provider.
+ */
+export class StorageReadOnlyError extends Data.TaggedError('StorageReadOnlyError')<{
+  readonly message: string;
+  readonly cause: unknown;
+}> {}
+
 export type StorageError =
   | StorageNotFoundError
   | StorageUnauthorizedError
   | StorageConflictError
+  | StorageReadOnlyError
   | StorageProviderError;
 
 /**
@@ -64,10 +76,12 @@ export const toStorageError = (error: unknown): StorageError => {
         return new StorageUnauthorizedError({ message, cause });
       case 'Conflict':
         return new StorageConflictError({ message, cause });
+      case 'ReadOnly':
+        return new StorageReadOnlyError({ message, cause });
       default:
-        // files-sdk v1.6 has exactly four codes ("NotFound", "Unauthorized",
-        // "Conflict", "Provider"). If this branch triggers, the SDK added a new
-        // error code — file an issue to add a dedicated tagged error.
+        // files-sdk v1.8+ has five codes. The 'Provider' case and any future
+        // codes land here. If the SDK adds a new deterministic code, add a
+        // dedicated tagged error.
         return new StorageProviderError({ message, cause, aborted: error.aborted });
     }
   }
