@@ -2,7 +2,7 @@
 '@effect-pantry/storage': minor
 ---
 
-Upgrade `files-sdk` peer dependency from `^1.6.0` to `^1.8.0`
+Upgrade `files-sdk` peer dependency from `^1.6.0` to `^1.9.0`
 
 **New features:**
 - `search(pattern, opts?)` — find objects by glob, regex, substring, or exact match (returns `Stream<StoredFile, StorageError>`)

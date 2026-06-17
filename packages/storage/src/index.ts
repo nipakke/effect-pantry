@@ -5,7 +5,7 @@
  * (memory, fs, S3, R2, Vercel Blob, and 35+ more), with typed errors and
  * automatic cancellation bridging.
  *
- * New in files-sdk 1.8:
+ * New in files-sdk 1.9:
  * - {@link sync} — incremental mirror of two Files instances
  * - {@link StorageInterface.search} — glob/regex key search as an Effect Stream
  * - {@link StorageInterface.capabilities} — query adapter features at runtime

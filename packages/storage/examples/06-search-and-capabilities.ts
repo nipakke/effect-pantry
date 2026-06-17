@@ -41,27 +41,31 @@ const program = Effect.gen(function* () {
 
   // ── Search by glob (default) ──────────────────────────────────────
   console.log('\nGlob: *.png');
-  yield* s.search('*.png').pipe(
-    Stream.runForEach((file) => Effect.sync(() => console.log(`  ${file.key} (${file.size}B)`))),
-  );
+  yield* s
+    .search('*.png')
+    .pipe(
+      Stream.runForEach((file) => Effect.sync(() => console.log(`  ${file.key} (${file.size}B)`))),
+    );
 
   // ── Search by globstar ────────────────────────────────────────────
   console.log('\nGlobstar: **/*.jpg');
-  yield* s.search('**/*.jpg').pipe(
-    Stream.runForEach((file) => Effect.sync(() => console.log(`  ${file.key} (${file.size}B)`))),
-  );
+  yield* s
+    .search('**/*.jpg')
+    .pipe(
+      Stream.runForEach((file) => Effect.sync(() => console.log(`  ${file.key} (${file.size}B)`))),
+    );
 
   // ── Search by substring ───────────────────────────────────────────
   console.log('\nSubstring: "profile"');
-  yield* s.search('profile', { match: 'substring' }).pipe(
-    Stream.runForEach((file) => Effect.sync(() => console.log(`  ${file.key}`))),
-  );
+  yield* s
+    .search('profile', { match: 'substring' })
+    .pipe(Stream.runForEach((file) => Effect.sync(() => console.log(`  ${file.key}`))));
 
   // ── Search with maxResults ────────────────────────────────────────
   console.log('\nFirst 2 matches for **/*');
-  yield* s.search('**/*', { maxResults: 2 }).pipe(
-    Stream.runForEach((file) => Effect.sync(() => console.log(`  ${file.key}`))),
-  );
+  yield* s
+    .search('**/*', { maxResults: 2 })
+    .pipe(Stream.runForEach((file) => Effect.sync(() => console.log(`  ${file.key}`))));
 });
 
 await Effect.runPromise(Effect.provide(program, storageLayer));

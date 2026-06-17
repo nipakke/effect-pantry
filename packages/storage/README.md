@@ -11,7 +11,7 @@
 npm install @effect-pantry/storage effect
 ```
 
-> **`files-sdk` is a peer dependency.** Install your own version and choose which adapters to bring in (e.g., `files-sdk/s3`, `files-sdk/memory`). Targets **Effect v3** and **files-sdk ^1.8.0** (new features: `search()`, `sync()`, `capabilities`, multipart uploads, readonly mode, receipts).
+> **`files-sdk` is a peer dependency.** Install your own version and choose which adapters to bring in (e.g., `files-sdk/s3`, `files-sdk/memory`). Targets **Effect v3** and **files-sdk ^1.9.0** (new features: `search()`, `sync()`, `capabilities`, multipart uploads, readonly mode, receipts).
 
 ## Quick Start
 
@@ -162,7 +162,7 @@ All methods return typed, tagged errors:
 | `StorageUnauthorizedError` | `Unauthorized` | Credentials missing, expired, or insufficient |
 | `StorageConflictError` | `Conflict` | Precondition failed |
 | `StorageProviderError` | `Provider` | Network, throttling, 5xx, timeout, cancellation |
-| `StorageReadOnlyError` | `ReadOnly` | Write attempted on read-only instance (files-sdk 1.8+) |
+| `StorageReadOnlyError` | `ReadOnly` | Write attempted on read-only instance (files-sdk 1.9+) |
 
 ```ts
 import { StorageNotFoundError, StorageUnauthorizedError } from "@effect-pantry/storage"
