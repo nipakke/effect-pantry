@@ -239,6 +239,86 @@ it.layer(TestLayer)('Storage', (it) => {
       expect(outcome._tag).toBe('Failure');
     }),
   );
+
+  // ═══════════════════════════════════════════════════════════════════
+  // search (files-sdk 1.8+)
+  // ═══════════════════════════════════════════════════════════════════
+
+  it.scoped('search by glob returns matching keys', () =>
+    Effect.gen(function* () {
+      const svc = yield* Storage;
+      yield* runUpload(svc, 'profile.png', 'png');
+      yield* runUpload(svc, 'cover.jpg', 'jpg');
+      yield* runUpload(svc, 'vacation/beach.jpg', 'beach');
+
+      const results = Array.from(yield* svc.search('*.png').pipe(Stream.runCollect));
+      expect(results).toHaveLength(1);
+      expect(results[0]!.key).toBe('profile.png');
+    }),
+  );
+
+  it.scoped('search by globstar matches nested keys', () =>
+    Effect.gen(function* () {
+      const svc = yield* Storage;
+      yield* runUpload(svc, 'profile.png', 'png');
+      yield* runUpload(svc, 'cover.jpg', 'jpg');
+      yield* runUpload(svc, 'vacation/sunset.png', 'sunset');
+
+      const results = Array.from(yield* svc.search('**/*.png').pipe(Stream.runCollect));
+      expect(results).toHaveLength(2);
+      const keys = results.map((f) => f.key);
+      expect(keys).toContain('profile.png');
+      expect(keys).toContain('vacation/sunset.png');
+    }),
+  );
+
+  it.scoped('search by substring returns matching keys', () =>
+    Effect.gen(function* () {
+      const svc = yield* Storage;
+      yield* runUpload(svc, 'report-2024.pdf', '2024');
+      yield* runUpload(svc, 'report-2025.pdf', '2025');
+      yield* runUpload(svc, 'notes.txt', 'notes');
+
+      const results = Array.from(
+        yield* svc.search('report', { match: 'substring' }).pipe(Stream.runCollect),
+      );
+      expect(results).toHaveLength(2);
+    }),
+  );
+
+  it.scoped('search with maxResults caps output', () =>
+    Effect.gen(function* () {
+      const svc = yield* Storage;
+      for (let i = 0; i < 10; i++) {
+        yield* runUpload(svc, `file-${i}.txt`, `content-${i}`);
+      }
+
+      const results = Array.from(
+        yield* svc.search('file-*.txt', { maxResults: 3 }).pipe(Stream.runCollect),
+      );
+      expect(results).toHaveLength(3);
+    }),
+  );
+
+  // ═══════════════════════════════════════════════════════════════════
+  // capabilities (files-sdk 1.8+)
+  // ═══════════════════════════════════════════════════════════════════
+
+  it.scoped('capabilities returns adapter capabilities from memory adapter', () =>
+    Effect.gen(function* () {
+      const svc = yield* Storage;
+      const caps = svc.capabilities;
+
+      // memory adapter supports range reads and delimiter
+      expect(caps.rangeRead).toBe(true);
+      expect(caps.delimiter).toBe(true);
+      // memory adapter does not support signed URLs
+      expect(caps.signedUrl.supported).toBe(false);
+      // shape is correct
+      expect(typeof caps.multipart).toBe('boolean');
+      expect(typeof caps.serverSideCopy).toBe('boolean');
+    }),
+  );
 });
 
 // ── Error-path layer (deliberately-failing adapter) ───────────────────
