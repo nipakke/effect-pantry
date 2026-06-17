@@ -44,6 +44,7 @@ catalog:
   '@standard-schema/spec': ^1.1.0
   '@typescript/native-preview': 7.0.0-dev.20260515.1
   rimraf: ^6.0.1
+  sharp: ^0.34.5
   '@vitest/ui': 0.1.21
   '@effect/platform': ^0.96.1
 
@@ -59,3 +60,4 @@ allowBuilds:
   '@parcel/watcher': true
   esbuild: true
   msgpackr-extract: true
+  sharp: true
