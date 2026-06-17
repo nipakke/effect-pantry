@@ -11,7 +11,7 @@
 npm install @effect-pantry/storage effect
 ```
 
-> **`files-sdk` is a peer dependency.** Install your own version and choose which adapters to bring in (e.g., `files-sdk/s3`, `files-sdk/memory`). Targets **Effect v3** and **files-sdk ^1.6.0**.
+> **`files-sdk` is a peer dependency.** Install your own version and choose which adapters to bring in (e.g., `files-sdk/s3`, `files-sdk/memory`). Targets **Effect v3** and **files-sdk ^1.8.0** (new features: `search()`, `sync()`, `capabilities`, multipart uploads, readonly mode, receipts).
 
 ## Quick Start
 
@@ -63,7 +63,8 @@ Layer.succeed(StorageAdapter, s3({
 ### `Storage.layer`
 
 Creates a layer that requires `StorageAdapter` and provides `Storage.Storage`.
-Accepts optional {@link MakeOptions} (e.g. `prefix`, `timeout`, `retries`).
+Accepts optional {@link MakeOptions} (e.g. `prefix`, `timeout`, `retries`,
+`readonly`, `receipts`, `plugins`).
 
 ```ts
 const layer = Storage.layer().pipe(
@@ -112,10 +113,12 @@ const s = yield* Storage.make().pipe(
 | `copy(from, to, opts?)` | `Effect<void, StorageError>` | Server-side copy |
 | `move(from, to, opts?)` | `Effect<void, StorageError>` | Rename / relocate |
 | `list(opts?)` | `Effect<ListResult, StorageError>` | Cursor-paginated listing |
+| `search(pattern, opts?)` | `Stream<StoredFile, StorageError>` | Find keys by glob, regex, substring, or exact match (files-sdk 1.8+) |
 | `url(key, opts?)` | `Effect<string, StorageError>` | Public or signed download URL |
 | `file(key)` | `FileHandle` | Key-bound handle for ergonomic single-key ops |
 | `signedUploadUrl(key, opts)` | `Effect<SignedUpload, StorageError>` | Presigned upload URL |
 | `hookStream(name)` | `Stream<HookEventMap[N]>` | Observable hook events |
+| `capabilities` _(getter)_ | `AdapterCapabilities` | Query adapter features at runtime (range read, signed URLs, etc.) |
 
 ### `FileHandle`
 
@@ -159,6 +162,7 @@ All methods return typed, tagged errors:
 | `StorageUnauthorizedError` | `Unauthorized` | Credentials missing, expired, or insufficient |
 | `StorageConflictError` | `Conflict` | Precondition failed |
 | `StorageProviderError` | `Provider` | Network, throttling, 5xx, timeout, cancellation |
+| `StorageReadOnlyError` | `ReadOnly` | Write attempted on read-only instance (files-sdk 1.8+) |
 
 ```ts
 import { StorageNotFoundError, StorageUnauthorizedError } from "@effect-pantry/storage"
@@ -168,6 +172,7 @@ yield* s.download("missing.txt").pipe(
     StorageNotFoundError: (e) => Effect.succeed(null),
     StorageUnauthorizedError: (e) => Effect.fail(new Error("Check credentials")),
     StorageConflictError: (e) => Effect.fail(e),
+    StorageReadOnlyError: (e) => Effect.fail(e),
     StorageProviderError: (e) => Effect.fail(e),
   }),
 )
@@ -210,6 +215,24 @@ const { result, progress } = yield* transfer(from, to, { prefix: "uploads/" })
 const { transferred, skipped, errors } = yield* result
 ```
 
+### `sync(source, dest, opts?)`
+
+Incremental mirror of one `FilesSDK.Files` instance onto another (files-sdk 1.8+).
+Uploads only what's new or changed, optionally prunes extraneous dest keys,
+and supports dry-run mode to preview the plan.
+
+```ts
+import { sync } from "@effect-pantry/storage"
+import * as FilesSDK from "files-sdk"
+import { s3 } from "files-sdk/s3"
+
+const from = new FilesSDK.Files({ adapter: s3({ bucket: "live" }) })
+const to   = new FilesSDK.Files({ adapter: s3({ bucket: "backup" }) })
+
+const { result, progress } = yield* sync(from, to, { prefix: "uploads/", prune: true })
+const { uploaded, deleted, errors } = yield* result
+```
+
 ## Examples
 
 - [Basic usage](./examples/01-basic-usage.ts) — Full CRUD with the memory adapter
@@ -217,6 +240,7 @@ const { transferred, skipped, errors } = yield* result
 - [Hooks & monitoring](./examples/03-hooks-and-monitoring.ts) — Logging, metrics, alerting
 - [Cross-provider transfer](./examples/04-cross-provider-transfer.ts) — S3 → R2 migration with progress
 - [Streams & progress](./examples/05-streams-and-progress.ts) — Upload/download progress, cancellation
+- [Search & capabilities](./examples/06-search-and-capabilities.ts) — Glob/regex key search and adapter capability queries
 
 ## License
 

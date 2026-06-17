@@ -5,6 +5,13 @@
  * (memory, fs, S3, R2, Vercel Blob, and 35+ more), with typed errors and
  * automatic cancellation bridging.
  *
+ * New in files-sdk 1.8:
+ * - {@link sync} — incremental mirror of two Files instances
+ * - {@link StorageInterface.search} — glob/regex key search as an Effect Stream
+ * - {@link StorageInterface.capabilities} — query adapter features at runtime
+ * - `readonly`, `receipts`, `plugins` passthrough in {@link MakeOptions}
+ * - `multipart`, `control` (resumable), `cacheControl` in {@link UploadOptions}
+ *
  * **⚠️ Early-stage package** — APIs may change without notice.
  * Not recommended for production use yet.
  *
@@ -16,11 +23,14 @@ export { StorageAdapter } from './adapter.js';
 export type { FileHandle, MakeOptions, UploadOptions } from './service-types.js';
 export { transfer } from './features/transfer.js';
 export type { TransferOptions } from './features/transfer.js';
+export { sync } from './features/sync.js';
+export type { SyncOptions } from './features/sync.js';
 
 export {
   StorageNotFoundError,
   StorageUnauthorizedError,
   StorageConflictError,
+  StorageReadOnlyError,
   StorageProviderError,
   toStorageError,
 } from './errors.js';

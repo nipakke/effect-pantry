@@ -3,6 +3,7 @@ import { Context, Effect, Layer, pipe, PubSub, Stream } from 'effect';
 import { StorageAdapter } from './adapter.js';
 import type { HookEvent, HookEventMap, HookName } from './hooks.js';
 import { bridgeProgress, wrapSDKCall } from './internal.js';
+import { toStorageError } from './errors.js';
 import type { FileHandle, MakeOptions, StorageInterface } from './service-types.js';
 
 /**
@@ -28,7 +29,8 @@ export class Storage extends Context.Tag('@effect-pantry/storage/Storage')<
  * Create a {@link Storage} service from the adapter found in the Effect context.
  *
  * Accepts optional {@link MakeOptions} to configure the underlying
- * {@link FilesSDK.Files} instance (e.g. `prefix`, `timeout`, `retries`).
+ * {@link FilesSDK.Files} instance (e.g. `prefix`, `timeout`, `retries`,
+ * `readonly`, `receipts`, `plugins`).
  * The `adapter` and `hooks` options are managed internally and cannot be
  * overridden.
  *
@@ -40,6 +42,12 @@ export class Storage extends Context.Tag('@effect-pantry/storage/Storage')<
  * @example With options
  * ```ts
  * const svc = yield* Storage.make({ prefix: "uploads/", timeout: 30_000 });
+ * ```
+ *
+ * @example Read-only mode (files-sdk 1.8+)
+ * ```ts
+ * const svc = yield* Storage.make({ readonly: true });
+ * // upload, delete, copy, move will fail with ReadOnly error
  * ```
  */
 export const make = (options?: MakeOptions) =>
@@ -87,6 +95,13 @@ export const make = (options?: MakeOptions) =>
       move: (from, to, opts) => wrapSDKCall((signal) => files.move(from, to, { ...opts, signal })),
 
       list: (opts) => wrapSDKCall((signal) => files.list({ ...opts, signal })),
+
+      search: (pattern, opts) =>
+        Stream.fromAsyncIterable(files.search(pattern, opts), toStorageError),
+
+      get capabilities() {
+        return files.capabilities;
+      },
 
       url: (key, opts) => wrapSDKCall((signal) => files.url(key, { ...opts, signal })),
 

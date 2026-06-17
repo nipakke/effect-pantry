@@ -163,11 +163,11 @@ it.layer(TestLayer)('Storage', (it) => {
       const failure = Cause.failureOption(outcome.cause);
       expect(failure._tag).toBe('Some');
       if (failure._tag === 'Some') {
-        // The memory adapter surfaces "not found" as FilesError("Provider"),
-        // which maps to StorageProviderError. Exact error-code mapping is
-        // exhaustively tested in errors.test.ts — this test only verifies
-        // that errors flow through the service pipeline end-to-end.
-        expect(failure.value._tag).toBe('StorageProviderError');
+        // The memory adapter in files-sdk 1.8+ correctly surfaces "not found"
+        // as FilesError("NotFound"), which maps to StorageNotFoundError.
+        // Exact error-code mapping is exhaustively tested in errors.test.ts —
+        // this test only verifies that errors flow end-to-end.
+        expect(failure.value._tag).toBe('StorageNotFoundError');
       }
     }),
   );

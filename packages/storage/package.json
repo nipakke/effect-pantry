@@ -55,7 +55,7 @@
     "vitest": "catalog:"
   },
   "peerDependencies": {
-    "files-sdk": "^1.6.0"
+    "files-sdk": "^1.8.0"
   },
   "engines": {
     "node": ">=22"
