@@ -45,7 +45,7 @@ catalog:
   '@typescript/native-preview': 7.0.0-dev.20260515.1
   rimraf: ^6.0.1
   '@vitest/ui': 0.1.21
-  '@effect/platform': ^0.96.1
+  '@effect/platform': ^0.96.2
 
 # ── Named catalogs ──────────────────────────────────────────────────
 catalogs:
